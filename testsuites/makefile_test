@@ -1,0 +1,35 @@
+INCLUDE = $(SRC_ROOT)\include
+LIBS    = $(SRC_ROOT)\libs
+LIB_DIV = $(SRC_ROOT)\libs\div.a
+LIB_C   = $(SRC_ROOT)\libs\newlib_libc.a
+LIB_M   = $(SRC_ROOT)\libs\newlib_libm.a
+OS      = $(SRC_ROOT)\libs\mylib.a
+BOOT    = $(SRC_ROOT)\libs\boot.o
+MAIN	= $(SRC_ROOT)\testsuites\main.o
+ALL_LIBS= $(OS) $(LIB_DIV) $(LIB_C) $(LIB_M) 
+LINK    = eld
+CC      = occ
+CFLAGS  = -c -O0 -g -I $(INCLUDE) -D__epos__ -D__rtems__ -U__GNUC__ -URTEMS_MULTIPROCESSING -DCONFIGURE_DISABLE_NEWLIB_REENTRANCY -D_OCC_NO_INLINE_
+CMD     = $(SRC_ROOT)\testsuites\testsuites.cmd
+LDFLAGS = -T $(CMD) -Map xxxmap --cref --no-whole-archive
+MAKE    = make
+
+OBJECTS = $(patsubst %.c, %.o, $(wildcard *.c))
+OUTNAME = $(join $(notdir $(shell chdir)), .out)
+
+test:clean $(OUTNAME)
+	
+$(OUTNAME):$(OBJECTS)
+	-$(LINK) $(BOOT) $(MAIN) $(OBJECTS) $(SRC) -( $(ALL_LIBS) -) -o $(OUTNAME) $(LDFLAGS)
+	-objdump -t $(OUTNAME) > $(addsuffix .symbol, $(OUTNAME))
+	-ldasm -d $(OUTNAME)
+	
+%.o:%.c
+	-$(CC) $(CFLAGS) $< -o $@
+
+clean: 
+	rm -f *.s 
+	rm -f *.sl 
+	rm -f *.o 
+	rm -f *.out 
+	rm -f *.dis 

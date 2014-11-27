@@ -1,0 +1,13 @@
+
+sample1.out:     file format elf32-bwdsp100
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00040f80  00000000  00000000  000000c0  2**6
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  1 .data         00000c40  00200000  00200000  00041040  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, DATA
+  2 .bss          000005c4  00400000  00400000  00042524  2**2
+                  ALLOC
+  3 .rodata       000008a4  00200310  00200310  00041c80  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, DATA

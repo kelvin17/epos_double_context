@@ -1,0 +1,18 @@
+/*
+   r2 = 0
+   yr2 = PMASKRl
+   yr3 = PMASKRh
+   .code_align 4
+   if yr2 != r2  b int_ret
+   .code_align 4
+   if yr3 != r2  b normal_ret
+
+.code_align 4
+int_ret:
+   reti
+
+.code_align 4
+normal_ret:
+   ret
+   
+*/

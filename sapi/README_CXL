@@ -1,0 +1,7 @@
+与rtems的sapi目录相比缺少文件
+1) debug.c
+2) exshutdown.c TODO
+3) extension*.c
+4) getversionstring.c
+5) itronapi.c   不需要
+6) posixapi.c   ?不需要?

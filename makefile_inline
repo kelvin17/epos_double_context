@@ -1,0 +1,89 @@
+SRC_ROOT= D:\WORK\bwdsp\104x\OS\EPOS_work\epos\epos_master_xlanchen_rearch
+INCLUDE = $(SRC_ROOT)\include
+LIBS    = $(SRC_ROOT)\libs
+LIB_DIV = $(SRC_ROOT)\libs\div.a
+LIB_C   = $(SRC_ROOT)\libs\newlib_libc.a
+LIB_M   = $(SRC_ROOT)\libs\newlib_libm.a
+OS      = $(SRC_ROOT)\libs\mylib.a
+BOOT    = $(SRC_ROOT)\libs\boot.o
+ALL_LIBS= $(LIB_DIV) $(LIB_C) $(LIB_M) $(OS)
+LNK     = eld
+CC      = occ
+AR      = ar
+CFLAGS  = -c -O0 -w -I $(INCLUDE) -D__epos__ -D__rtems__ -U__GNUC__ -URTEMS_MULTIPROCESSING
+MAKE    = make
+
+export LNK CC AR CFLAGS MAKE INCLUDE SRC_ROOT ALL_LIBS LIBS LIB_DIV LIB_C LIB_M
+
+LIB_DIRS     = div newlib
+MAIN_DIRS    = libbsp epos eposcore sapi libmisc libfs libcsupport 
+MAIN_MODULES = $(patsubst %,%/thismodule.a,$(MAIN_DIRS))
+
+SOURCES  = $(wildcard *.c)
+ASM      = $(wildcard *.asm)
+OBJS     = $(patsubst %.c,%.o,$(SOURCES))
+ASM_OBJS = $(patsubst %.asm,%.o,$(ASM))
+
+allcompile: libs $(OS)
+	$(MAKE) -C ECSwkspace
+
+$(OS): $(MAIN_DIRS) $(OBJS) $(ASM_OBJS) 
+	$(AR) -r $(OS) $(ALL_OBJECTS)
+	$(AR) -d $(OS) boot.o
+	copy boot.o $(BOOT)
+	
+$(OBJS): %.o: %.c 
+	$(CC) $(CFLAGS) $< -o $@ 
+$(ASM_OBJS): %.o: %.asm
+	$(CC) $(CFLAGS) $< -o $@  
+
+.PHONY: $(MAIN_DIRS)
+$(MAIN_DIRS):
+	$(MAKE) -C $@
+	$(AR) -x $@/thismodule.a
+
+libs: $(LIB_DIRS)
+.PHONY: $(LIB_DIRS)
+$(LIB_DIRS):
+	$(MAKE) -C $@
+
+os: $(OS)
+	$(MAKE) -C ECSwkspace
+
+ALL_OBJECTS=$(wildcard *.o)	
+
+.PHONY: clean 
+clean:
+	del /F/S *.o
+	del /F mylib.a
+	del /F/S boot.o
+	del /F/S div.a
+	del /F/S newlib_libc.a
+	del /F/S newlib_libm.a
+	del	/F/S libc.a
+	del	/F/S libm.a
+	del /F/S thismodule.a
+	del /F *.out
+	del /F/S *~
+
+.PHONY: pclean 
+pclean:
+	del /F/S mylib.a
+	del /F/S boot.o
+	del /F/S div.a
+	del /F/S newlib_libc.a
+	del /F/S newlib_libm.a
+	del	/F/S libc.a
+	del	/F/S libm.a
+	del /F/S thismodule.a
+	del /F *.out
+	del /F/S *~
+	
+.PHONY: osclean 
+osclean:
+	del /F/S *.o
+	del /F/S mylib.a
+	del /F/S boot.o	
+	del /F/S thismodule.a
+	del /F *.out
+	del /F/S *~
