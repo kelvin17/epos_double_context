@@ -3,7 +3,8 @@
 *.out
 *~
 *.log
-epos*
+epos.*
+epos_double*
 .svn/
 *.wks
 *.dis
