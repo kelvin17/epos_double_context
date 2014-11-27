@@ -3,7 +3,7 @@
 *.out
 *~
 *.log
-epos_MHX*
+epos*
 .svn/
 *.wks
 *.dis
