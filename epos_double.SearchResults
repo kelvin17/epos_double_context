@@ -1,0 +1,18 @@
+---- ITRON Matches (17 in 7 files) ----
+Apiext.c (eposcore\apiext):     *  Currently the ITRON API is the only API which does not
+Confdefs.h (include\rtems): *  This accounts for any extra memory required by the ITRON API
+Confdefs.h (include\rtems):    uint32_t ITRON;
+Confdefs.h (include\rtems):    /* ITRON API Pieces */
+Confdefs.h (include\rtems):    /* ITRON API Pieces */
+Confdefs.h (include\rtems):     *  This is the ITRON API Configuration Table.
+Confdefs.h (include\rtems): *  If the user has configured a set of ITRON Initialization Tasks,
+Confdefs.h (include\rtems): *  If an attempt was made to configure ITRON objects and
+Confdefs.h (include\rtems): *  the ITRON API was not configured into RTEMS, error out.
+Confdefs.h (include\rtems):  #error "CONFIGURATION ERROR: ITRON API support not configured!!"
+Config.h (include\rtems): *  optional APIs like POSIX and ITRON safely.
+Config.h (include\rtems):#include "itron.h"
+Config.h (include\rtems):#include "itron/config.h"
+Cpuopts.h (include\rtems\score):/* if itron api is supported */
+Object.h (include\rtems\score): *  for the ITRON API.
+Rtemsobjectgetapiname.c (epos\eposobject):  { "ITRON",    OBJECTS_ITRON_API, 0},
+Thread.h (include\rtems\score):  /** This value is for the ITRON API. */
