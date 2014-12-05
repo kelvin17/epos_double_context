@@ -14,8 +14,7 @@
 /* if RTEMS_DEBUG is enabled */
 /* #undef RTEMS_DEBUG */
 
-/* if itron api is supported */
-/* #undef RTEMS_ITRON_API */
+
 
 /* if multiprocessing is enabled */
 /* #undef RTEMS_MULTIPROCESSING */

@@ -58,9 +58,6 @@ extern epos_configuration_table        Configuration;
 #ifdef RTEMS_POSIX_API
   extern posix_api_configuration_table    Configuration_POSIX_API;
 #endif
-#ifdef RTEMS_ITRON_API
-  extern itron_api_configuration_table    Configuration_ITRON_API;
-#endif
 
 /**
  *  This macro determines whether the RTEMS reentrancy support for
@@ -73,31 +70,6 @@ extern epos_configuration_table        Configuration;
 #endif
 
 #include <rtems/libio.h>
-
-/*
-#ifdef CONFIGURE_INIT
-epos_libio_init_functions_t epos_libio_init_helper =
-    #ifdef CONFIGURE_APPLICATION_DISABLE_FILESYSTEM
-    NULL;
-    #else
-    epos_libio_init;
-    #endif
-
-epos_libio_supp_functions_t epos_libio_supp_helper =
-    #ifdef CONFIGURE_APPLICATION_DISABLE_FILESYSTEM
-    NULL;
-    #else
-    open_dev_console;
-    #endif
-
-epos_fs_init_functions_t    epos_fs_init_helper =
-    #ifdef CONFIGURE_APPLICATION_DISABLE_FILESYSTEM
-    NULL;
-    #else
-    epos_filesystem_initialize;
-    #endif
-#endif
-*/
 #ifdef CONFIGURE_INIT
 epos_libio_init_functions_t epos_libio_init_helper =
     #ifdef CONFIGURE_APPLICATION_ENABLE_FILESYSTEM
@@ -1321,37 +1293,37 @@ const  int epos_filesystem_mount_table_size = 1;
   #define CONFIGURE_POSIX_INIT_THREAD_STACK_SIZE    0
 #endif
 
-/*
+/*ADA
  *  This block of defines are for applications which use GNAT/RTEMS.
  *  GNAT implements each Ada task as a POSIX thread.
- */
+
 #ifdef CONFIGURE_GNAT_RTEMS
 
-  /**
+
    *  The GNAT run-time needs something less than (10) POSIX mutexes.
    *  We may be able to get by with less but why bother.
-   */
+
   #define CONFIGURE_GNAT_MUTEXES 10
 
-  /**
+
    *  This is the maximum number of Ada tasks which can be concurrently
    *  in existence.  Twenty (20) are required to run all tests in the
    *  ACATS (formerly ACVC).
-   */
+
   #ifndef CONFIGURE_MAXIMUM_ADA_TASKS
     #define CONFIGURE_MAXIMUM_ADA_TASKS  20
   #endif
 
-  /**
+
    * This is the number of non-Ada tasks which invoked Ada code.
-   */
+
   #ifndef CONFIGURE_MAXIMUM_FAKE_ADA_TASKS
     #define CONFIGURE_MAXIMUM_FAKE_ADA_TASKS 0
   #endif
 
-  /**
+
    * Ada tasks are allocated twice the minimum stack space.
-   */
+
   #define CONFIGURE_ADA_TASKS_STACK \
     (CONFIGURE_MAXIMUM_ADA_TASKS * \
       (CONFIGURE_MINIMUM_TASK_STACK_SIZE + (6 * 1024)))
@@ -1362,18 +1334,7 @@ const  int epos_filesystem_mount_table_size = 1;
   #define CONFIGURE_MAXIMUM_FAKE_ADA_TASKS 0
   #define CONFIGURE_ADA_TASKS_STACK        0
 #endif
-
-
-  #define CONFIGURE_MAXIMUM_ITRON_TASKS               0
-  #define CONFIGURE_MAXIMUM_ITRON_SEMAPHORES          0
-  #define CONFIGURE_MAXIMUM_ITRON_EVENTFLAGS          0
-  #define CONFIGURE_MAXIMUM_ITRON_MAILBOXES           0
-  #define CONFIGURE_MAXIMUM_ITRON_MESSAGE_BUFFERS     0
-  #define CONFIGURE_MAXIMUM_ITRON_PORTS               0
-  #define CONFIGURE_MAXIMUM_ITRON_MEMORY_POOLS        0
-  #define CONFIGURE_MAXIMUM_ITRON_FIXED_MEMORY_POOLS  0
-  #define CONFIGURE_MEMORY_PER_TASK_FOR_ITRON_API     0
-  #define CONFIGURE_MEMORY_FOR_ITRON                  0
+*/
 /**
  *  This macro specifies the amount of memory to be reserved for the
  *  Newlib C Library reentrancy structure -- if we are using newlib.
@@ -1408,8 +1369,7 @@ const  int epos_filesystem_mount_table_size = 1;
    (_Configure_From_workspace(CONFIGURE_MINIMUM_TASK_STACK_SIZE) + \
     CONFIGURE_MEMORY_PER_TASK_FOR_CLASSIC_API + \
     CONFIGURE_MEMORY_PER_TASK_FOR_NEWLIB + \
-    CONFIGURE_MEMORY_PER_TASK_FOR_POSIX_API + \
-    CONFIGURE_MEMORY_PER_TASK_FOR_ITRON_API))  + \
+    CONFIGURE_MEMORY_PER_TASK_FOR_POSIX_API ))  + \
   _Configure_From_workspace( \
     _Configure_Max_Objects(_number_FP_tasks) * CONTEXT_FP_SIZE) + \
   _Configure_From_workspace( \
@@ -1560,17 +1520,6 @@ const  int epos_filesystem_mount_table_size = 1;
   #define CONFIGURE_INITIALIZATION_THREADS_STACKS_POSIX_PART 0
 #endif
 
-/**
- *  This accounts for any extra memory required by the ITRON API
- *  Initialization Task.
- */
-#if defined(RTEMS_ITRON_API) && \
-    (CONFIGURE_ITRON_INIT_TASK_STACK_SIZE > CONFIGURE_MINIMUM_TASK_STACK_SIZE)
-  #define CONFIGURE_INITIALIZATION_THREADS_STACKS_ITRON_PART \
-      (CONFIGURE_ITRON_INIT_TASK_STACK_SIZE - CONFIGURE_MINIMUM_TASK_STACK_SIZE)
-#else
-  #define CONFIGURE_INITIALIZATION_THREADS_STACKS_ITRON_PART 0
-#endif
 
 /**
  *  This macro provides a summation of the various initialization task
@@ -1578,19 +1527,21 @@ const  int epos_filesystem_mount_table_size = 1;
  */
 #define CONFIGURE_INITIALIZATION_THREADS_STACKS \
     (CONFIGURE_INITIALIZATION_THREADS_STACKS_CLASSIC_PART + \
-    CONFIGURE_INITIALIZATION_THREADS_STACKS_POSIX_PART + \
-    CONFIGURE_INITIALIZATION_THREADS_STACKS_ITRON_PART)
-
+    CONFIGURE_INITIALIZATION_THREADS_STACKS_POSIX_PART)
 /**
  *  This macro provides a summation of the various task and thread
  *  requirements.
  */
+ /*ADA
 #define CONFIGURE_TOTAL_TASKS_AND_THREADS \
    (CONFIGURE_MAXIMUM_TASKS + \
-    CONFIGURE_MAXIMUM_POSIX_THREADS + CONFIGURE_MAXIMUM_ADA_TASKS + \
-    CONFIGURE_MAXIMUM_ITRON_TASKS \
+    CONFIGURE_MAXIMUM_POSIX_THREADS + CONFIGURE_MAXIMUM_ADA_TASKS \
    )
-
+   */
+   #define CONFIGURE_TOTAL_TASKS_AND_THREADS \
+   (CONFIGURE_MAXIMUM_TASKS + \
+    CONFIGURE_MAXIMUM_POSIX_THREADS \
+   )
 /**
  *  This macro reserves the memory required by the statically configured
  *  user extensions.
@@ -1637,7 +1588,6 @@ const  int epos_filesystem_mount_table_size = 1;
     uint32_t FP_OVERHEAD;
     uint32_t CLASSIC;
     uint32_t POSIX;
-    uint32_t ITRON;
 
     /* System overhead pieces */
     uint32_t INTERRUPT_VECTOR_TABLE;
@@ -1670,16 +1620,7 @@ const  int epos_filesystem_mount_table_size = 1;
     uint32_t POSIX_SPINLOCKS;
     uint32_t POSIX_RWLOCKS;
 #endif
-#ifdef RTEMS_ITRON_API
-    /* ITRON API Pieces */
-    uint32_t ITRON_SEMAPHORES;
-    uint32_t ITRON_EVENTFLAGS;
-    uint32_t ITRON_MAILBOXES;
-    uint32_t ITRON_MESSAGE_BUFFERS;
-    uint32_t ITRON_PORTS;
-    uint32_t ITRON_MEMORY_POOLS;
-    uint32_t ITRON_FIXED_MEMORY_POOLS;
-#endif
+
   } Configuration_Debug_t;
 
   Configuration_Debug_t Configuration_Memory_Debug = {
@@ -1691,7 +1632,6 @@ const  int epos_filesystem_mount_table_size = 1;
     CONFIGURE_MEMORY_FOR_TASKS(0, 1),
     CONFIGURE_MEMORY_FOR_CLASSIC,
     CONFIGURE_MEMORY_FOR_POSIX,
-    CONFIGURE_MEMORY_FOR_ITRON,
 
     /* System overhead pieces */
     CONFIGURE_INTERRUPT_VECTOR_TABLE,
@@ -1729,19 +1669,6 @@ const  int epos_filesystem_mount_table_size = 1;
     CONFIGURE_MEMORY_FOR_POSIX_TIMERS( CONFIGURE_MAXIMUM_POSIX_TIMERS ),
 #endif
 
-#ifdef RTEMS_ITRON_API
-    /* ITRON API Pieces */
-    CONFIGURE_MEMORY_FOR_ITRON_SEMAPHORES( CONFIGURE_MAXIMUM_ITRON_SEMAPHORES ),
-    CONFIGURE_MEMORY_FOR_ITRON_EVENTFLAGS( CONFIGURE_MAXIMUM_ITRON_EVENTFLAGS ),
-    CONFIGURE_MEMORY_FOR_ITRON_MAILBOXES( CONFIGURE_MAXIMUM_ITRON_MAILBOXES ),
-    CONFIGURE_MEMORY_FOR_ITRON_MESSAGE_BUFFERS(
-        CONFIGURE_MAXIMUM_ITRON_MESSAGE_BUFFERS ),
-    CONFIGURE_MEMORY_FOR_ITRON_PORTS( CONFIGURE_MAXIMUM_ITRON_PORTS ),
-    CONFIGURE_MEMORY_FOR_ITRON_MEMORY_POOLS(
-        CONFIGURE_MAXIMUM_ITRON_MEMORY_POOLS ),
-    CONFIGURE_MEMORY_FOR_ITRON_FIXED_MEMORY_POOLS(
-        CONFIGURE_MAXIMUM_ITRON_FIXED_MEMORY_POOLS ),
-#endif
   };
 #endif
 
@@ -1757,7 +1684,6 @@ const  int epos_filesystem_mount_table_size = 1;
    CONFIGURE_MEMORY_FOR_CLASSIC + \
    CONFIGURE_MEMORY_FOR_POSIX + \
    (CONFIGURE_MAXIMUM_POSIX_THREADS * CONFIGURE_MINIMUM_TASK_STACK_SIZE ) + \
-   CONFIGURE_MEMORY_FOR_ITRON + \
    CONFIGURE_INITIALIZATION_THREADS_STACKS + \
    CONFIGURE_MEMORY_FOR_STATIC_EXTENSIONS + \
    CONFIGURE_MEMORY_FOR_MP + \
@@ -1787,15 +1713,11 @@ const  int epos_filesystem_mount_table_size = 1;
   };
 
   #ifdef RTEMS_POSIX_API
-    /**
-     *  This is the POSIX API Configuration Table.
-     */
+
     posix_api_configuration_table Configuration_POSIX_API = {
-      CONFIGURE_MAXIMUM_POSIX_THREADS + CONFIGURE_MAXIMUM_ADA_TASKS,
-      CONFIGURE_MAXIMUM_POSIX_MUTEXES + CONFIGURE_GNAT_MUTEXES +
-        CONFIGURE_MAXIMUM_ADA_TASKS + CONFIGURE_MAXIMUM_FAKE_ADA_TASKS,
-      CONFIGURE_MAXIMUM_POSIX_CONDITION_VARIABLES +
-        CONFIGURE_MAXIMUM_ADA_TASKS + CONFIGURE_MAXIMUM_FAKE_ADA_TASKS,
+      CONFIGURE_MAXIMUM_POSIX_THREADS ,
+      CONFIGURE_MAXIMUM_POSIX_MUTEXES ,
+      CONFIGURE_MAXIMUM_POSIX_CONDITION_VARIABLES ,
       CONFIGURE_MAXIMUM_POSIX_KEYS,
       CONFIGURE_MAXIMUM_POSIX_TIMERS,
       CONFIGURE_MAXIMUM_POSIX_QUEUED_SIGNALS,
@@ -1807,26 +1729,8 @@ const  int epos_filesystem_mount_table_size = 1;
       CONFIGURE_MAXIMUM_POSIX_SPINLOCKS,
       CONFIGURE_POSIX_INIT_THREAD_TABLE_SIZE,
       CONFIGURE_POSIX_INIT_THREAD_TABLE_NAME
-    };
-  #endif
-
-  #ifdef RTEMS_ITRON_API
-    /**
-     *  This is the ITRON API Configuration Table.
-     */
-    itron_api_configuration_table Configuration_ITRON_API = {
-      CONFIGURE_MAXIMUM_ITRON_TASKS,
-      CONFIGURE_MAXIMUM_ITRON_SEMAPHORES,
-      CONFIGURE_MAXIMUM_ITRON_EVENTFLAGS,
-      CONFIGURE_MAXIMUM_ITRON_MAILBOXES,
-      CONFIGURE_MAXIMUM_ITRON_MESSAGE_BUFFERS,
-      CONFIGURE_MAXIMUM_ITRON_PORTS,
-      CONFIGURE_MAXIMUM_ITRON_MEMORY_POOLS,
-      CONFIGURE_MAXIMUM_ITRON_FIXED_MEMORY_POOLS,
-      CONFIGURE_ITRON_INIT_TASK_TABLE_SIZE,
-      CONFIGURE_ITRON_INIT_TASK_TABLE_NAME
-    };
-  #endif
+    };     
+  #endif 
 
   /** This variable specifies the minimum stack size for tasks in an RTEMS
    *  application.
@@ -1909,22 +1813,6 @@ const  int epos_filesystem_mount_table_size = 1;
   #endif
 #endif
 
-/*
- *  If the user has configured a set of ITRON Initialization Tasks,
- *  then we need to install the code that runs that loop.
- */
-#ifdef RTEMS_ITRON_API
-  #ifdef CONFIGURE_INIT
-    #if defined(CONFIGURE_ITRON_INIT_TASK_TABLE) || \
-        defined(CONFIGURE_ITRON_HAS_OWN_INIT_TASK_TABLE)
-      void _ITRON_Task_Initialize_user_tasks_body(void);
-      void (*_ITRON_Initialize_user_tasks_p)(void) =
-                _ITRON_Task_Initialize_user_tasks_body;
-    #else
-      void (*_ITRON_Initialize_user_tasks_p)(void) = NULL;
-    #endif
-  #endif
-#endif
 
 #ifdef __cplusplus
 }
@@ -1949,9 +1837,7 @@ const  int epos_filesystem_mount_table_size = 1;
  */
 #if !defined(CONFIGURE_IDLE_TASK_INITIALIZES_APPLICATION)
   #if (CONFIGURE_MAXIMUM_TASKS == 0) && \
-      (CONFIGURE_MAXIMUM_POSIX_THREADS == 0) && \
-      (CONFIGURE_MAXIMUM_ADA_TASKS == 0) &&  \
-      (CONFIGURE_MAXIMUM_ITRON_TASKS == 0)
+      (CONFIGURE_MAXIMUM_POSIX_THREADS == 0) 
     #error "CONFIGURATION ERROR: No tasks or threads configured!!"
   #endif
 #endif
@@ -1960,9 +1846,9 @@ const  int epos_filesystem_mount_table_size = 1;
  *  Make sure at least one of the initialization task/thread
  *  tables was defined.
  */
+
 #if !defined(CONFIGURE_RTEMS_INIT_TASKS_TABLE) && \
     !defined(CONFIGURE_POSIX_INIT_THREAD_TABLE) && \
-    !defined(CONFIGURE_ITRON_INIT_TASK_TABLE) && \
     !defined(CONFIGURE_IDLE_TASK_INITIALIZES_APPLICATION)
 #error "CONFIGURATION ERROR: No initialization tasks or threads configured!!"
 #endif
@@ -1998,23 +1884,6 @@ const  int epos_filesystem_mount_table_size = 1;
   #endif
 #endif
 
-/*
- *  If an attempt was made to configure ITRON objects and
- *  the ITRON API was not configured into RTEMS, error out.
- */
-#if !defined(RTEMS_ITRON_API)
-  #if ((CONFIGURE_MAXIMUM_ITRON_TASKS != 0) || \
-       (CONFIGURE_MAXIMUM_ITRON_SEMAPHORES != 0) || \
-       (CONFIGURE_MAXIMUM_ITRON_EVENTFLAGS != 0) || \
-       (CONFIGURE_MAXIMUM_ITRON_MAILBOXES != 0) || \
-       (CONFIGURE_MAXIMUM_ITRON_MESSAGE_BUFFERS != 0) || \
-       (CONFIGURE_MAXIMUM_ITRON_PORTS != 0) || \
-       (CONFIGURE_MAXIMUM_ITRON_MEMORY_POOLS != 0) || \
-       (CONFIGURE_MAXIMUM_ITRON_FIXED_MEMORY_POOLS != 0) || \
-      defined(CONFIGURE_ITRON_INIT_TASK_TABLE))
-  #error "CONFIGURATION ERROR: ITRON API support not configured!!"
-  #endif
-#endif
 
 /*
  *  You must either explicity include or exclude the clock driver.

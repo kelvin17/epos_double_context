@@ -231,12 +231,14 @@ typedef enum {
   OBJECTS_NO_API       = 0,
   OBJECTS_INTERNAL_API = 1,
   OBJECTS_CLASSIC_API  = 2,
-  OBJECTS_POSIX_API    = 3,
-  OBJECTS_ITRON_API    = 4
+  OBJECTS_POSIX_API    = 3
+ // OBJECTS_ITRON_API    = 4
 } Objects_APIs;
 
+
 /** This macro is used to generically specify the last API index. */
-#define OBJECTS_APIS_LAST OBJECTS_ITRON_API
+//#define OBJECTS_APIS_LAST OBJECTS_ITRON_API
+#define OBJECTS_APIS_LAST OBJECTS_POSIX_API
 
 /**
  *  This enumerated type is used in the class field of the object ID
@@ -295,24 +297,9 @@ typedef enum {
 /** This macro is used to generically specify the last API index. */
 #define OBJECTS_POSIX_CLASSES_LAST OBJECTS_POSIX_RWLOCKS
 
-/**
- *  This enumerated type is used in the class field of the object ID
- *  for the ITRON API.
- */
-typedef enum {
-  OBJECTS_ITRON_NO_CLASS              = 0,
-  OBJECTS_ITRON_TASKS                 = 1,
-  OBJECTS_ITRON_EVENTFLAGS            = 2,
-  OBJECTS_ITRON_MAILBOXES             = 3,
-  OBJECTS_ITRON_MESSAGE_BUFFERS       = 4,
-  OBJECTS_ITRON_PORTS                 = 5,
-  OBJECTS_ITRON_SEMAPHORES            = 6,
-  OBJECTS_ITRON_VARIABLE_MEMORY_POOLS = 7,
-  OBJECTS_ITRON_FIXED_MEMORY_POOLS    = 8
-} Objects_ITRON_API;
 
 /** This macro is used to generically specify the last API index. */
-#define OBJECTS_ITRON_CLASSES_LAST OBJECTS_ITRON_FIXED_MEMORY_POOLS
+//#define OBJECTS_ITRON_CLASSES_LAST OBJECTS_ITRON_FIXED_MEMORY_POOLS
 
 /**
  *  This enumerated type lists the locations which may be returned

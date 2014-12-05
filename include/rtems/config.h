@@ -39,20 +39,13 @@ extern "C" {
 
 /*
  *  This is kind of kludgy but it allows targets to totally ignore the
- *  optional APIs like POSIX and ITRON safely.
+ *  optional APIs like POSIX  safely.
  */
 
 #ifdef RTEMS_POSIX_API
 #include "posix/config.h"
 #else
 typedef void *posix_api_configuration_table;
-#endif
-
-#ifdef RTEMS_ITRON_API
-#include "itron.h"
-#include "itron/config.h"
-#else
-typedef void *itron_api_configuration_table;
 #endif
 
 #include <rtems/rtems/config.h>
@@ -271,9 +264,6 @@ extern epos_configuration_table    Configuration;
 
 #define epos_configuration_get_posix_api_configuration() \
         (&Configuration_POSIX_API)
-
-#define epos_configuration_get_itron_api_configuration() \
-        (&Configuration_ITRON_API)
 
 #ifdef __cplusplus
 }

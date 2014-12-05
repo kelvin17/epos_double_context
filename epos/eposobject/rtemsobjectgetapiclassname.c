@@ -56,19 +56,6 @@ epos_assoc_t epos_object_api_posix_assoc[] = {
 };
 #endif
 
-#ifdef RTEMS_ITRON_API
-epos_assoc_t epos_object_api_itron_assoc[] = {
-  { "Task",                    OBJECTS_ITRON_TASKS, 0},
-  { "Event Flag",              OBJECTS_ITRON_EVENTFLAGS, 0},
-  { "Mailbox",                 OBJECTS_ITRON_MAILBOXES, 0},
-  { "Message Buffer",          OBJECTS_ITRON_MESSAGE_BUFFERS, 0},
-  { "Port",                    OBJECTS_ITRON_PORTS, 0},
-  { "Semaphore",               OBJECTS_ITRON_SEMAPHORES, 0},
-  { "Variable Memory Pool",    OBJECTS_ITRON_VARIABLE_MEMORY_POOLS, 0},
-  { "Fixed Memory Pool",       OBJECTS_ITRON_FIXED_MEMORY_POOLS, 0},
-};
-#endif
-
 const char *epos_object_get_api_class_name(
   int the_api,
   int the_class
@@ -85,10 +72,7 @@ const char *epos_object_get_api_class_name(
   else if ( the_api == OBJECTS_POSIX_API )
     api_assoc = epos_object_api_posix_assoc;
 #endif
-#ifdef RTEMS_ITRON_API
-  else if ( the_api == OBJECTS_ITRON_API )
-    api_assoc = epos_object_api_itron_assoc;
-#endif
+
   else
     return "BAD API";
   class_assoc = epos_assoc_ptr_by_local( api_assoc, the_class );

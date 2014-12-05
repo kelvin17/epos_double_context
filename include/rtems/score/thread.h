@@ -37,7 +37,7 @@
 
 
 
-#if defined(RTEMS_POSIX_API) || defined(RTEMS_ITRON_API)
+#if defined(RTEMS_POSIX_API) 
   #define RTEMS_SCORE_THREAD_ENABLE_EXHAUST_TIMESLICE
 #endif
 
@@ -331,16 +331,14 @@ typedef enum {
   /** This value is for the Classic RTEMS API. */
   THREAD_API_RTEMS,
   /** This value is for the POSIX API. */
-  THREAD_API_POSIX,
-  /** This value is for the ITRON API. */
-  THREAD_API_ITRON
+  THREAD_API_POSIX
 }  Thread_APIs;
 
 /** This macro defines the first API which has threads. */
 #define THREAD_API_FIRST THREAD_API_RTEMS
 
 /** This macro defines the last API which has threads. */
-#define THREAD_API_LAST  THREAD_API_ITRON
+#define THREAD_API_LAST  THREAD_API_POSIX
 
 /**
  *  This structure defines the Thread Control Block (TCB).

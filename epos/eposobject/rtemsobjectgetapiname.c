@@ -25,10 +25,8 @@ epos_assoc_t epos_objects_api_assoc[] = {
   { "Internal", OBJECTS_INTERNAL_API, 0},
   { "Classic",  OBJECTS_CLASSIC_API, 0},
   { "POSIX",    OBJECTS_POSIX_API, 0},
-  { "ITRON",    OBJECTS_ITRON_API, 0},
   { 0, 0, 0 }
 };
-
 const char *epos_object_get_api_name(
   int api
 )

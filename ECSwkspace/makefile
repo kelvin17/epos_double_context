@@ -1,5 +1,5 @@
 #SUB_DIRS = 	sample1 partition_test region_test task_switch_test semaphore_test semaphore_manager_test message_test clock_interrupt_test task_wake_test
-SUB_DIRS = restart
+SUB_DIRS = restart clock_interrupt_test
 #SRC_ROOT= $(shell chdir)\..\
 INCLUDE = $(SRC_ROOT)\include
 LIBS    = $(SRC_ROOT)\libs
