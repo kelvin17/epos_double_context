@@ -511,9 +511,7 @@ RTEMS_INLINE_ROUTINE bool _RTEMS_tasks_Priority_is_valid (
 
 #endif
 #endif
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/rtems/taskmp.h>
-#endif
+
 
 #ifdef __cplusplus
 }

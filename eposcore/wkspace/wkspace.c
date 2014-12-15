@@ -46,7 +46,21 @@ void _Workspace_Handler_initialization(void)
     CPU_HEAP_ALIGNMENT
   ); 
 
-  if ( memory_available == 0 )
+  uintptr_t memory_available_B = 0;
+  void *starting_address_B = Configuration.work_space_B_start;
+  uintptr_t size_B = Configuration.work_space_B_size;
+
+  if ( Configuration.do_zero_of_workspace )
+   memset( starting_address_B, 0, size_B );
+  
+  memory_available_B = _Heap_Initialize(
+    &_Workspace_Area_B,
+    starting_address_B,
+    size_B,
+    CPU_HEAP_ALIGNMENT
+  ); 
+
+  if ( memory_available == 0 || memory_available_B == 0)
     _Internal_error_Occurred(
       INTERNAL_ERROR_CORE,
       true,

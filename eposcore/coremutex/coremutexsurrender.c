@@ -56,13 +56,8 @@
 
 CORE_mutex_Status _CORE_mutex_Surrender(
   CORE_mutex_Control                *the_mutex,
-#if defined(RTEMS_MULTIPROCESSING)
-  Objects_Id                         id,
-  CORE_mutex_API_mp_support_callout  api_mutex_mp_support
-#else
   Objects_Id                         id ,//__attribute__((unused)),
   CORE_mutex_API_mp_support_callout  api_mutex_mp_support //__attribute__((unused))
-#endif
 )
 {
   Thread_Control *the_thread;
@@ -158,17 +153,6 @@ CORE_mutex_Status _CORE_mutex_Surrender(
    */
   if ( ( the_thread = _Thread_queue_Dequeue( &the_mutex->Wait_queue ) ) ) {
 
-#if defined(RTEMS_MULTIPROCESSING)
-    if ( !_Objects_Is_local_id( the_thread->Object.id ) ) {
-
-      the_mutex->holder     = NULL;
-      the_mutex->holder_id  = the_thread->Object.id;
-      the_mutex->nest_count = 1;
-
-      ( *api_mutex_mp_support)( the_thread, id );
-
-    } else
-#endif
     {
 
       the_mutex->holder     = the_thread;

@@ -90,18 +90,6 @@ epos_status_code epos_task_set_note(
       api->Notepads[ notepad ] = note;
       _Thread_Enable_dispatch();
       return RTEMS_SUCCESSFUL;
-
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      return _RTEMS_tasks_MP_Send_request_packet(
-        RTEMS_TASKS_MP_SET_NOTE_REQUEST,
-        id,
-        0,          /* Not used */
-        notepad,
-        note
-      );
-#endif
-
     case OBJECTS_ERROR:
       break;
   }

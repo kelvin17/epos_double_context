@@ -19,9 +19,6 @@
 #include <rtems/score/address.h>
 #include <rtems/score/chain.h>
 #include <rtems/score/object.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/objectmp.h>
-#endif
 #include <rtems/score/thread.h>
 #include <rtems/score/wkspace.h>
 #include <rtems/score/sysstate.h>
@@ -39,10 +36,6 @@
  *    size                - size of this object's control block
  *    is_string           - true if names for this object are strings
  *    maximum_name_length - maximum length of each object's name
- *    When multiprocessing is configured,
- *      supports_global     - true if this is a global object class
- *      extract_callout     - pointer to threadq extract callout
- *
  *  Output parameters:  NONE
  */
 
@@ -54,20 +47,12 @@ void _Objects_Initialize_information(
   uint16_t             size,
   bool                 is_string,
   uint32_t             maximum_name_length
-#if defined(RTEMS_MULTIPROCESSING)
-  ,
-  bool                 supports_global,
-  Objects_Thread_queue_Extract_callout extract
-#endif
 )
 {
   static Objects_Control *null_local_table = NULL;
   uint32_t                minimum_index;
   uint32_t                name_length;
   uint32_t                maximum_per_allocation;
-  #if defined(RTEMS_MULTIPROCESSING)
-    uint32_t              index;
-  #endif
 
   information->the_api            = the_api;
   information->the_class          = the_class;
@@ -150,25 +135,5 @@ void _Objects_Initialize_information(
      */
     _Objects_Extend_information( information );
   }
-
-  /*
-   *  Take care of multiprocessing
-   */
-  #if defined(RTEMS_MULTIPROCESSING)
-    information->extract = extract;
-
-    if ( (supports_global == true) && _System_state_Is_multiprocessing ) {
-
-      information->global_table =
-	(Chain_Control *) _Workspace_Allocate_or_fatal_error(
-	  (_Objects_Maximum_nodes + 1) * sizeof(Chain_Control)
-	);
-
-      for ( index=1; index <= _Objects_Maximum_nodes ; index++ )
-	_Chain_Initialize_empty( &information->global_table[ index ] );
-     }
-     else
-       information->global_table = NULL;
-  #endif
 }
 

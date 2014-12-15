@@ -25,9 +25,6 @@
 #include <rtems/score/states.h>
 #include <rtems/score/thread.h>
 #include <rtems/score/wkspace.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/mpci.h>
-#endif
 #include <rtems/rtems/status.h>
 #include <rtems/rtems/attr.h>
 #include <rtems/rtems/message.h>
@@ -65,39 +62,14 @@ epos_status_code epos_message_queue_delete(
 
       _CORE_message_queue_Close(
         &the_message_queue->message_queue,
-        #if defined(RTEMS_MULTIPROCESSING)
-          _Message_queue_MP_Send_object_was_deleted,
-        #else
-          NULL,
-        #endif
+         NULL,
         CORE_MESSAGE_QUEUE_STATUS_WAS_DELETED
       );
 
       _Message_queue_Free( the_message_queue );
 
-#if defined(RTEMS_MULTIPROCESSING)
-      if ( _Attributes_Is_global( the_message_queue->attribute_set ) ) {
-        _Objects_MP_Close(
-          &_Message_queue_Information,
-          the_message_queue->Object.id
-        );
-
-        _Message_queue_MP_Send_process_packet(
-          MESSAGE_QUEUE_MP_ANNOUNCE_DELETE,
-          the_message_queue->Object.id,
-          0,                                 /* Not used */
-          0
-        );
-      }
-#endif
       _Thread_Enable_dispatch();
       return RTEMS_SUCCESSFUL;
-
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      _Thread_Dispatch();
-      return RTEMS_ILLEGAL_ON_REMOTE_OBJECT;
-#endif
 
     case OBJECTS_ERROR:
       break;

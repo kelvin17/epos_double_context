@@ -67,12 +67,6 @@ epos_status_code epos_task_is_suspended(
       _Thread_Enable_dispatch();
       return RTEMS_ALREADY_SUSPENDED;
 
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      _Thread_Dispatch();
-      return RTEMS_ILLEGAL_ON_REMOTE_OBJECT;
-#endif
-
     case OBJECTS_ERROR:
       break;
   }

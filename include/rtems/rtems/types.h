@@ -30,10 +30,6 @@
 #include <rtems/score/tod.h>
 #include <rtems/score/watchdog.h>
 #include <rtems/rtems/modes.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/mpci.h>
-#include <rtems/score/mppkt.h>
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -171,60 +167,6 @@ typedef struct {
  * @brief Task mode type.
  */
 typedef Modes_Control epos_mode;
-
-/*
- *  MPCI related entries
- */
-#if defined(RTEMS_MULTIPROCESSING)
-/**
- * @brief Set of MPCI packet classes which are internally dispatched to the
- * managers.
- */
-typedef MP_packet_Classes          epos_mp_packet_classes;
-
-/**
- * @brief Prefix found at the beginning of each MPCI packet sent between nodes.
- */
-typedef MP_packet_Prefix           epos_packet_prefix;
-
-/**
- * @brief Indirect pointer to the initialization entry point for an MPCI
- * handler.
- */
-typedef MPCI_initialization_entry  epos_mpci_initialization_entry;
-
-/**
- * @brief Indirect pointer to the get_packet entry point for an MPCI handler.
- */
-typedef MPCI_get_packet_entry      epos_mpci_get_packet_entry;
-
-/**
- * @brief Indirect pointer to the return_packet entry point for an MPCI
- * handler.
- */
-typedef MPCI_return_packet_entry   epos_mpci_return_packet_entry;
-
-/**
- * @brief Indirect pointer to the send_packet entry point for an MPCI handler.
- */
-typedef MPCI_send_entry            epos_mpci_send_packet_entry;
-
-/**
- * @brief Indirect pointer to the receive entry point for an MPCI handler.
- */
-typedef MPCI_receive_entry         epos_mpci_receive_packet_entry;
-
-/**
- * @brief Return type from every MPCI handler routine.
- */
-typedef MPCI_Entry                 epos_mpci_entry;
-
-/**
- * @brief Structure which is used to configure an MPCI handler.
- */
-typedef MPCI_Control               epos_mpci_table;
-
-#endif
 
 /** @} */
 

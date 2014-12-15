@@ -19,9 +19,6 @@
 #include <rtems/score/address.h>
 #include <rtems/score/chain.h>
 #include <rtems/score/object.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/objectmp.h>
-#endif
 #include <rtems/score/thread.h>
 #include <rtems/score/wkspace.h>
 #include <rtems/score/sysstate.h>
@@ -57,9 +54,7 @@ Objects_Name_or_id_lookup_errors _Objects_Name_to_id_u32(
   Objects_Control           *the_object;
   uint32_t                   index;
   uint32_t                   name_length;
-#if defined(RTEMS_MULTIPROCESSING)
-  Objects_Name               name_for_mp;
-#endif
+
 
   /* ASSERT: information->is_string == false */
 
@@ -94,14 +89,7 @@ Objects_Name_or_id_lookup_errors _Objects_Name_to_id_u32(
     }
   }
 
-#if defined(RTEMS_MULTIPROCESSING)
-  if ( _Objects_Is_local_node( node ) || node == OBJECTS_SEARCH_LOCAL_NODE )
-    return OBJECTS_INVALID_NAME;
-
-  name_for_mp.name_u32 = name;
-  return _Objects_MP_Global_name_search( information, name_for_mp, node, id );
-#else
   return OBJECTS_INVALID_NAME;
-#endif
+
 }
 

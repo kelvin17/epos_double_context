@@ -59,9 +59,6 @@ epos_status_code epos_barrier_wait(
       return _Barrier_Translate_core_barrier_return_code(
                 _Thread_Executing->Wait.return_code );
 
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-#endif
     case OBJECTS_ERROR:
       break;
   }

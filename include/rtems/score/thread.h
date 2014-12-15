@@ -68,9 +68,6 @@ extern "C" {
 
 #include <rtems/score/context.h>
 #include <rtems/score/cpu.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/mppkt.h>
-#endif
 #include <rtems/score/object.h>
 #include <rtems/score/priority.h>
 #include <rtems/score/stack.h>
@@ -311,10 +308,6 @@ typedef struct {
   Thread_Wait_information  Wait;
   /** This field is the Watchdog used to manage proxy delays and timeouts. */
   Watchdog_Control         Timer;
-#if defined(RTEMS_MULTIPROCESSING)
-  /** This field is the received response packet in an MP system. */
-  MP_packet_Prefix        *receive_packet;
-#endif
      /****************** end of common block ********************/
   /** This field is used to manage the set of proxies in the system. */
   Chain_Node               Active;
@@ -358,10 +351,6 @@ struct Thread_Control_struct {
   Thread_Wait_information  Wait;
   /** This field is the Watchdog used to manage thread delays and timeouts. */
   Watchdog_Control         Timer;
-#if defined(RTEMS_MULTIPROCESSING)
-  /** This field is the received response packet in an MP system. */
-  MP_packet_Prefix        *receive_packet;
-#endif
 #ifdef __RTEMS_STRICT_ORDER_MUTEX__
   /** This field is the head of queue of priority inheritance mutex
    *  held by the thread.
@@ -371,20 +360,13 @@ struct Thread_Control_struct {
      /*================= end of common block =================*/
   /** This field is the number of nested suspend calls. */
   uint32_t                              suspend_count;
-#if defined(RTEMS_MULTIPROCESSING)
-  /** This field is true if the thread is offered globally */
-  bool                                  is_global;
-#endif
   /** This field is is true if the post task context switch should be
    *  executed for this thread at the next context switch.
    */
   bool                                  do_post_task_switch_extension;
   /** This field is true if the thread is preemptible. */
   bool                                  is_preemptible;
-#if __RTEMS_ADA__
-  /** This field is the GNAT self context pointer. */
-  void                                 *epos_ada_self;
-#endif
+
   /** This field is the length of the time quantum that this thread is
    *  allowed to consume.  The algorithm used to manage limits on CPU usage
    *  is specified by budget_algorithm.
@@ -427,10 +409,6 @@ struct Thread_Control_struct {
   epos_task_variable_t                *task_variables;
 };
 
-/**
- *  Self for the GNU Ada Run-Time
- */
-SCORE_EXTERN void *epos_ada_self;
 
 /**
  *  The following defines the information control block used to
@@ -909,9 +887,6 @@ RTEMS_INLINE_ROUTINE void _Thread_Set_libc_reent (
 
 #endif
 
-#endif
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/threadmp.h>
 #endif
 
 #ifdef __cplusplus

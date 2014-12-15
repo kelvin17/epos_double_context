@@ -89,10 +89,5 @@ void _Thread_blocking_operation_Cancel(
 
   _Thread_Unblock( the_thread );
 
-#if defined(RTEMS_MULTIPROCESSING)
-  if ( !_Objects_Is_local_id( the_thread->Object.id ) )
-    _Thread_MP_Free_proxy( the_thread );
-#endif
-
 }
 

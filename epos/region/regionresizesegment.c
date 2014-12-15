@@ -93,11 +93,6 @@ epos_status_code epos_region_resize_segment(
         return RTEMS_INVALID_ADDRESS;
         break;
 
-#if defined(RTEMS_MULTIPROCESSING)
-      case OBJECTS_REMOTE:        /* this error cannot be returned */
-        break;
-#endif
-
       case OBJECTS_ERROR:
       default:
         return_status = RTEMS_INVALID_ID;

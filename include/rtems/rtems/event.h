@@ -152,10 +152,6 @@ void _Event_Timeout (
  *  @brief he following defines the synchronization flag used by the
  */
 RTEMS_EVENT_EXTERN volatile Thread_blocking_operation_States _Event_Sync_state;
-
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/rtems/eventmp.h>
-#endif
 #ifndef __RTEMS_APPLICATION__
 #ifndef _OCC_NO_INLINE_
 #include <rtems/rtems/event.inl>

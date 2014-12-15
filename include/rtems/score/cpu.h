@@ -114,20 +114,29 @@ typedef void CPU_Interrupt_frame;
  */
 typedef uint32_t REG_TYPE;
 
-#define N_REGS 0x51D
+//Context_Control的大小
+//#define N_REGS 0x51D
+#define N_REGS 0x2B6
+#define N_B_REGS 0x268
 
 typedef struct _Context_Control
 {
 	REG_TYPE current_stack_base;
+	REG_TYPE context_B_base;//指向B栈的基址
 	REG_TYPE _ira[44];
 	REG_TYPE _ra;
 	REG_TYPE _ba;
 	REG_TYPE _u9;
 	REG_TYPE _sr;
-	REG_TYPE _pad1[0x4E0];
+	REG_TYPE _pad1[0x278]; //去掉保存在B栈中的个数
 	REG_TYPE return_address;
 	REG_TYPE _pad2[0xB];
 }Context_Control;
+
+typedef struct _Context_B
+{
+	REG_TYPE _pad1[0x268];
+}Context_B;
 
 
 

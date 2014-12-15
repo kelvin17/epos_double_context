@@ -70,12 +70,6 @@ epos_status_code epos_task_restart(
       _Thread_Enable_dispatch();
       return RTEMS_INCORRECT_STATE;
 
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      _Thread_Dispatch();
-      return RTEMS_ILLEGAL_ON_REMOTE_OBJECT;
-#endif
-
     case OBJECTS_ERROR:
       break;
   }

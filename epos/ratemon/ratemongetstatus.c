@@ -107,9 +107,6 @@ epos_status_code epos_rate_monotonic_get_status(
       _Thread_Enable_dispatch();
       return RTEMS_SUCCESSFUL;
 
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:            /* should never return this */
-#endif
     case OBJECTS_ERROR:
       break;
   }

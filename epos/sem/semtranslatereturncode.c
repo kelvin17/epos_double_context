@@ -42,9 +42,6 @@
 #include <rtems/score/states.h>
 #include <rtems/score/thread.h>
 #include <rtems/score/threadq.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/mpci.h>
-#endif
 #include <rtems/score/sysstate.h>
 
 #include <rtems/score/interr.h>
@@ -78,13 +75,6 @@ epos_status_code _Semaphore_Translate_core_mutex_return_code (
   uint32_t   status
 )
 {
-  /*
-   *  If this thread is blocking waiting for a result on a remote operation.
-   */
-  #if defined(RTEMS_MULTIPROCESSING)
-    if ( _Thread_Is_proxy_blocking(status) )
-      return RTEMS_PROXY_BLOCKING;
-  #endif
 
   /*
    *  Internal consistency check for bad status from SuperCore
@@ -120,10 +110,6 @@ epos_status_code _Semaphore_Translate_core_semaphore_return_code (
   uint32_t   status
 )
 {
-  #if defined(RTEMS_MULTIPROCESSING)
-    if ( _Thread_Is_proxy_blocking(status) )
-      return RTEMS_PROXY_BLOCKING;
-  #endif
   /*
    *  Internal consistency check for bad status from SuperCore
    */

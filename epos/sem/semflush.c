@@ -33,9 +33,6 @@
 #include <rtems/score/states.h>
 #include <rtems/score/thread.h>
 #include <rtems/score/threadq.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/mpci.h>
-#endif
 #include <rtems/score/sysstate.h>
 
 #include <rtems/score/interr.h>
@@ -55,11 +52,9 @@
  *    error code       - if unsuccessful
  */
 
-#if defined(RTEMS_MULTIPROCESSING)
-#define SEND_OBJECT_WAS_DELETED _Semaphore_MP_Send_object_was_deleted
-#else
+
 #define SEND_OBJECT_WAS_DELETED NULL
-#endif
+
 
 epos_status_code epos_semaphore_flush(
   epos_id        id
@@ -87,12 +82,6 @@ epos_status_code epos_semaphore_flush(
       }
       _Thread_Enable_dispatch();
       return RTEMS_SUCCESSFUL;
-
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      _Thread_Dispatch();
-      return RTEMS_ILLEGAL_ON_REMOTE_OBJECT;
-#endif
 
     case OBJECTS_ERROR:
       break;

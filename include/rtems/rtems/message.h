@@ -284,22 +284,6 @@ epos_status_code _Message_queue_Translate_core_message_queue_return_code (
   uint32_t   the_message_queue_status
 );
 
-#if defined(RTEMS_MULTIPROCESSING)
-/**
- *  @brief Message_queue_Core_message_queue_mp_support
- *
- *  Input parameters:
- *    the_thread - the remote thread the message was submitted to
- *    id         - id of the message queue
- *
- *  Output parameters: NONE
- */
-void  _Message_queue_Core_message_queue_mp_support (
-  Thread_Control *the_thread,
-  epos_id        id
-);
-#endif
-
 #ifndef __RTEMS_APPLICATION__
 #ifndef _OCC_NO_INLINE_
 #include <rtems/rtems/message.inl>
@@ -318,9 +302,6 @@ RTEMS_INLINE_ROUTINE Message_queue_Control *_Message_queue_Get (
 );
 
 #endif
-#endif
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/rtems/msgmp.h>
 #endif
 
 #ifdef __cplusplus

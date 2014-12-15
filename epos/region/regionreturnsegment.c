@@ -95,11 +95,6 @@ epos_status_code epos_region_return_segment(
 #endif
         break;
 
-#if defined(RTEMS_MULTIPROCESSING)
-      case OBJECTS_REMOTE:        /* this error cannot be returned */
-        break;
-#endif
-
       case OBJECTS_ERROR:
       default:
         return_status = RTEMS_INVALID_ID;

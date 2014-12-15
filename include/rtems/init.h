@@ -36,14 +36,6 @@ extern "C" {
 #include <rtems/rtems/types.h>
 #include <rtems/rtems/intr.h>
 
-#if defined(RTEMS_MULTIPROCESSING)
-/**
- *  The following defines the default Multiprocessing Configuration
- *  Table.  This table is used in a single processor system.
- */
-extern const epos_multiprocessing_table
-  _Initialization_Default_multiprocessing_table;
-#endif
 
 /**
  *  @brief epos_initialize_data_structures

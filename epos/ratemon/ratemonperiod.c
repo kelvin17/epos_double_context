@@ -369,9 +369,6 @@ epos_status_code epos_rate_monotonic_period(
           break;
       }
 
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:            /* should never return this */
-#endif
     case OBJECTS_ERROR:
       break;
   }

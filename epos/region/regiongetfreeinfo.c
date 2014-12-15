@@ -72,11 +72,6 @@ epos_status_code epos_region_get_free_information(
         return_status = RTEMS_SUCCESSFUL;
         break;
 
-#if defined(RTEMS_MULTIPROCESSING)
-      case OBJECTS_REMOTE:        /* this error cannot be returned */
-        break;
-#endif
-
       case OBJECTS_ERROR:
       default:
         return_status = RTEMS_INVALID_ID;

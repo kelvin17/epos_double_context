@@ -25,9 +25,6 @@
 #include <rtems/score/states.h>
 #include <rtems/score/thread.h>
 #include <rtems/score/wkspace.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/mpci.h>
-#endif
 #include <rtems/rtems/status.h>
 #include <rtems/rtems/attr.h>
 #include <rtems/rtems/message.h>
@@ -70,21 +67,6 @@ epos_status_code epos_message_queue_flush(
       *count = _CORE_message_queue_Flush( &the_message_queue->message_queue );
       _Thread_Enable_dispatch();
       return RTEMS_SUCCESSFUL;
-
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      _Thread_Executing->Wait.return_argument = count;
-
-      return
-        _Message_queue_MP_Send_request_packet(
-          MESSAGE_QUEUE_MP_FLUSH_REQUEST,
-          id,
-          0,                               /* buffer not used */
-          0,                               /* size */
-          0,                               /* option_set not used */
-          MPCI_DEFAULT_TIMEOUT
-        );
-#endif
 
     case OBJECTS_ERROR:
       break;

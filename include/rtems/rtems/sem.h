@@ -258,9 +258,6 @@ RTEMS_INLINE_ROUTINE bool _Semaphore_Is_null (
 #endif
 
 #endif
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/rtems/semmp.h>
-#endif
 
 #ifdef __cplusplus
 }

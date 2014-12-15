@@ -67,11 +67,6 @@ void _Thread_queue_Enqueue_with_handler(
 
   the_thread = _Thread_Executing;
 
-#if defined(RTEMS_MULTIPROCESSING)
-  if ( _Thread_MP_Is_receive( the_thread ) && the_thread->receive_packet )
-    the_thread = _Thread_MP_Allocate_proxy( the_thread_queue->state );
-  else
-#endif
   /*
    *  Set the blocking state for this thread queue in the thread.
    */

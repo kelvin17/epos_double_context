@@ -68,16 +68,6 @@ epos_status_code epos_task_suspend(
       _Thread_Enable_dispatch();
       return RTEMS_ALREADY_SUSPENDED;
 
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      return _RTEMS_tasks_MP_Send_request_packet(
-        RTEMS_TASKS_MP_SUSPEND_REQUEST,
-        id,
-        0,          /* Not used */
-        0,          /* Not used */
-        0           /* Not used */
-      );
-#endif
 
     case OBJECTS_ERROR:
       break;

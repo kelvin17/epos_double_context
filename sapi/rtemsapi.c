@@ -34,9 +34,6 @@
 #include <rtems/rtems/tasks.h>
 #include <rtems/rtems/event.h>
 #include <rtems/rtems/message.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/rtems/mp.h>
-#endif
 #include <rtems/rtems/part.h>
 #include <rtems/rtems/ratemon.h>
 #include <rtems/rtems/region.h>
@@ -60,10 +57,6 @@ void _RTEMS_API_Initialize(void)
    * various managers.
    */
   _Objects_Information_table[OBJECTS_CLASSIC_API] = _RTEMS_Objects;
-
-  #if defined(RTEMS_MULTIPROCESSING)
-    _Multiprocessing_Manager_initialization();
-  #endif
 
   _RTEMS_tasks_Manager_initialization();
   _Timer_Manager_initialization();

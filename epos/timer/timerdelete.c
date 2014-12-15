@@ -55,10 +55,6 @@ epos_status_code epos_timer_delete(
       _Timer_Free( the_timer );
       _Thread_Enable_dispatch();
       return RTEMS_SUCCESSFUL;
-
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:            /* should never return this */
-#endif
     case OBJECTS_ERROR:
       break;
   }

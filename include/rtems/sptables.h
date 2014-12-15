@@ -38,9 +38,6 @@ extern "C" {
 #include <rtems/rtems/tasks.h>
 #include <rtems/rtems/event.h>
 #include <rtems/rtems/message.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/rtems/mp.h>
-#endif
 #include <rtems/rtems/part.h>
 #include <rtems/rtems/ratemon.h>
 #include <rtems/rtems/region.h>
@@ -48,26 +45,6 @@ extern "C" {
 #include <rtems/rtems/signal.h>
 #include <rtems/rtems/timer.h>
 
-#if defined(RTEMS_MULTIPROCESSING)
-/*
- *  This is the default Multiprocessing Configuration Table.
- *  It is used in single processor configurations.
- */
-  #if defined(SAPI_INIT)
-    const epos_multiprocessing_table
-	   _Initialization_Default_multiprocessing_table = {
-      1,                        /* local node number */
-      1,                        /* maximum number nodes in system */
-      0,                        /* maximum number global objects */
-      0,                        /* maximum number proxies */
-      STACK_MINIMUM_SIZE,       /* MPCI receive server stack size */
-      NULL,                     /* pointer to MPCI address table */
-    };
-  #else
-    extern const epos_multiprocessing_table
-	   _Initialization_Default_multiprocessing_table;
-  #endif
-#endif
 
 #ifdef __cplusplus
 }

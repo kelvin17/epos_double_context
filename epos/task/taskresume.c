@@ -67,17 +67,6 @@ epos_status_code epos_task_resume(
       _Thread_Enable_dispatch();
       return RTEMS_INCORRECT_STATE;
 
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      return _RTEMS_tasks_MP_Send_request_packet(
-          RTEMS_TASKS_MP_RESUME_REQUEST,
-          id,
-          0,          /* Not used */
-          0,          /* Not used */
-          0           /* Not used */
-        );
-#endif
-
     case OBJECTS_ERROR:
       break;
   }

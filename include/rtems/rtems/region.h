@@ -290,10 +290,6 @@ extern void _Region_Process_queue(Region_Control *the_region);
 
 #endif
 
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/rtems/regionmp.h>
-#endif
-
 /**
  *  @brief _Region_Debug_Walk
  *

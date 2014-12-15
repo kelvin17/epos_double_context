@@ -52,9 +52,6 @@ extern "C" {
 extern epos_initialization_tasks_table Initialization_tasks[];
 extern epos_driver_address_table       Device_drivers[];
 extern epos_configuration_table        Configuration;
-#if defined(RTEMS_MULTIPROCESSING)
-  extern epos_multiprocessing_table      Multiprocessing_configuration;
-#endif
 #ifdef RTEMS_POSIX_API
   extern posix_api_configuration_table    Configuration_POSIX_API;
 #endif
@@ -842,68 +839,6 @@ const  int epos_filesystem_mount_table_size = 1;
 #endif
 
   #define CONFIGURE_LIBBLOCK_SEMAPHORES 0
-#if defined(RTEMS_MULTIPROCESSING)
-  /*
-   *  Default Multiprocessing Configuration Table.  The defaults are
-   *  appropriate for most of the RTEMS Multiprocessor Test Suite.  Each
-   *  value may be overridden within each test to customize the environment.
-   */
-
-  #ifdef CONFIGURE_MP_APPLICATION
-    #define CONFIGURE_TIMER_FOR_SHARED_MEMORY_DRIVER 1
-
-    #ifndef CONFIGURE_HAS_OWN_MULTIPROCESSING_TABLE
-
-      #ifndef CONFIGURE_MP_NODE_NUMBER
-        #define CONFIGURE_MP_NODE_NUMBER                NODE_NUMBER
-      #endif
-
-      #ifndef CONFIGURE_MP_MAXIMUM_NODES
-        #define CONFIGURE_MP_MAXIMUM_NODES              2
-      #endif
-
-      #ifndef CONFIGURE_MP_MAXIMUM_GLOBAL_OBJECTS
-        #define CONFIGURE_MP_MAXIMUM_GLOBAL_OBJECTS     32
-      #endif
-      #define CONFIGURE_MEMORY_FOR_GLOBAL_OBJECTS(_global_objects) \
-        _Configure_Object_RAM((_global_objects), sizeof(Objects_MP_Control))
-
-      #ifndef CONFIGURE_MP_MAXIMUM_PROXIES
-        #define CONFIGURE_MP_MAXIMUM_PROXIES            32
-      #endif
-      #define CONFIGURE_MEMORY_FOR_PROXIES(_proxies) \
-        _Configure_Object_RAM((_proxies) + 1, sizeof(Thread_Proxy_control) )
-
-      #ifndef CONFIGURE_EXTRA_MPCI_RECEIVE_SERVER_STACK
-        #define CONFIGURE_EXTRA_MPCI_RECEIVE_SERVER_STACK 0
-      #endif
-
-      #ifndef CONFIGURE_MP_MPCI_TABLE_POINTER
-        #include <rtems/mpci.h>
-        #define CONFIGURE_MP_MPCI_TABLE_POINTER         &MPCI_table
-      #endif
-
-      #ifdef CONFIGURE_INIT
-        epos_multiprocessing_table Multiprocessing_configuration = {
-          CONFIGURE_MP_NODE_NUMBER,               /* local node number */
-          CONFIGURE_MP_MAXIMUM_NODES,             /* maximum # nodes */
-          CONFIGURE_MP_MAXIMUM_GLOBAL_OBJECTS,    /* maximum # global objects */
-          CONFIGURE_MP_MAXIMUM_PROXIES,           /* maximum # proxies */
-          CONFIGURE_EXTRA_MPCI_RECEIVE_SERVER_STACK, /* MPCI stack > minimum */
-          CONFIGURE_MP_MPCI_TABLE_POINTER         /* ptr to MPCI config table */
-        };
-      #endif
-
-      #define CONFIGURE_MULTIPROCESSING_TABLE    &Multiprocessing_configuration
-
-    #endif /* CONFIGURE_HAS_OWN_MULTIPROCESSING_TABLE */
-
-  #else
-
-    #define CONFIGURE_MULTIPROCESSING_TABLE    NULL
-
-  #endif /* CONFIGURE_MP_APPLICATION */
-#endif /* RTEMS_MULTIPROCESSING */
 
 #ifndef CONFIGURE_TIMER_FOR_SHARED_MEMORY_DRIVER
   #define CONFIGURE_TIMER_FOR_SHARED_MEMORY_DRIVER 0
@@ -1293,48 +1228,6 @@ const  int epos_filesystem_mount_table_size = 1;
   #define CONFIGURE_POSIX_INIT_THREAD_STACK_SIZE    0
 #endif
 
-/*ADA
- *  This block of defines are for applications which use GNAT/RTEMS.
- *  GNAT implements each Ada task as a POSIX thread.
-
-#ifdef CONFIGURE_GNAT_RTEMS
-
-
-   *  The GNAT run-time needs something less than (10) POSIX mutexes.
-   *  We may be able to get by with less but why bother.
-
-  #define CONFIGURE_GNAT_MUTEXES 10
-
-
-   *  This is the maximum number of Ada tasks which can be concurrently
-   *  in existence.  Twenty (20) are required to run all tests in the
-   *  ACATS (formerly ACVC).
-
-  #ifndef CONFIGURE_MAXIMUM_ADA_TASKS
-    #define CONFIGURE_MAXIMUM_ADA_TASKS  20
-  #endif
-
-
-   * This is the number of non-Ada tasks which invoked Ada code.
-
-  #ifndef CONFIGURE_MAXIMUM_FAKE_ADA_TASKS
-    #define CONFIGURE_MAXIMUM_FAKE_ADA_TASKS 0
-  #endif
-
-
-   * Ada tasks are allocated twice the minimum stack space.
-
-  #define CONFIGURE_ADA_TASKS_STACK \
-    (CONFIGURE_MAXIMUM_ADA_TASKS * \
-      (CONFIGURE_MINIMUM_TASK_STACK_SIZE + (6 * 1024)))
-
-#else
-  #define CONFIGURE_GNAT_MUTEXES           0
-  #define CONFIGURE_MAXIMUM_ADA_TASKS      0
-  #define CONFIGURE_MAXIMUM_FAKE_ADA_TASKS 0
-  #define CONFIGURE_ADA_TASKS_STACK        0
-#endif
-*/
 /**
  *  This macro specifies the amount of memory to be reserved for the
  *  Newlib C Library reentrancy structure -- if we are using newlib.
@@ -1376,21 +1269,8 @@ const  int epos_filesystem_mount_table_size = 1;
           (CONFIGURE_MAXIMUM_USER_EXTENSIONS + 1) * sizeof(void *)) \
  )
 
-/**
- *  This defines the amount of memory configured for the multiprocessing
- *  support required by this application.
- */
-#ifdef CONFIGURE_MP_APPLICATION
-  #define CONFIGURE_MEMORY_FOR_MP \
-    (CONFIGURE_MEMORY_FOR_PROXIES(CONFIGURE_MP_MAXIMUM_PROXIES) + \
-     CONFIGURE_MEMORY_FOR_GLOBAL_OBJECTS( \
-             CONFIGURE_MP_MAXIMUM_GLOBAL_OBJECTS) + \
-     CONFIGURE_MEMORY_FOR_TASKS(1, 1) + \
-     CONFIGURE_EXTRA_MPCI_RECEIVE_SERVER_STACK \
-  )
-#else
-  #define CONFIGURE_MEMORY_FOR_MP  0
-#endif
+
+
 
 /**
  *  This is so we can account for tasks with stacks greater than minimum
@@ -1532,12 +1412,7 @@ const  int epos_filesystem_mount_table_size = 1;
  *  This macro provides a summation of the various task and thread
  *  requirements.
  */
- /*ADA
-#define CONFIGURE_TOTAL_TASKS_AND_THREADS \
-   (CONFIGURE_MAXIMUM_TASKS + \
-    CONFIGURE_MAXIMUM_POSIX_THREADS + CONFIGURE_MAXIMUM_ADA_TASKS \
-   )
-   */
+
    #define CONFIGURE_TOTAL_TASKS_AND_THREADS \
    (CONFIGURE_MAXIMUM_TASKS + \
     CONFIGURE_MAXIMUM_POSIX_THREADS \
@@ -1686,7 +1561,6 @@ const  int epos_filesystem_mount_table_size = 1;
    (CONFIGURE_MAXIMUM_POSIX_THREADS * CONFIGURE_MINIMUM_TASK_STACK_SIZE ) + \
    CONFIGURE_INITIALIZATION_THREADS_STACKS + \
    CONFIGURE_MEMORY_FOR_STATIC_EXTENSIONS + \
-   CONFIGURE_MEMORY_FOR_MP + \
    CONFIGURE_MESSAGE_BUFFER_MEMORY + \
    (CONFIGURE_MEMORY_OVERHEAD * 1024) + \
    (CONFIGURE_EXTRA_TASK_STACKS) + (CONFIGURE_ADA_TASKS_STACK) \
@@ -1759,6 +1633,8 @@ const  int epos_filesystem_mount_table_size = 1;
   epos_configuration_table Configuration = {
     NULL,                                     /* filled in by BSP */
     40000,//CONFIGURE_EXECUTIVE_RAM_SIZE,             /* required RTEMS workspace */
+    NULL,   
+    40000,
     CONFIGURE_MAXIMUM_USER_EXTENSIONS,        /* maximum dynamic extensions */
     CONFIGURE_MICROSECONDS_PER_TICK,          /* microseconds per clock tick */
     CONFIGURE_TICKS_PER_TIMESLICE,            /* ticks per timeslice quantum */
@@ -1773,9 +1649,7 @@ const  int epos_filesystem_mount_table_size = 1;
     Device_drivers,                           /* pointer to driver table */
     CONFIGURE_NUMBER_OF_INITIAL_EXTENSIONS,   /* number of static extensions */
     CONFIGURE_INITIAL_EXTENSION_TABLE,        /* pointer to static extensions */
-    #if defined(RTEMS_MULTIPROCESSING)
-      CONFIGURE_MULTIPROCESSING_TABLE,        /* pointer to MP config table */
-    #endif
+
   };
 #endif
 
@@ -1853,14 +1727,6 @@ const  int epos_filesystem_mount_table_size = 1;
 #error "CONFIGURATION ERROR: No initialization tasks or threads configured!!"
 #endif
 
-/*
- *  If the user is trying to configure a multiprocessing application and
- *  RTEMS was not configured and built multiprocessing, then error out.
- */
-#if defined(CONFIGURE_MP_APPLICATION) && \
-    !defined(RTEMS_MULTIPROCESSING)
-#error "CONFIGURATION ERROR: RTEMS not configured for multiprocessing!!"
-#endif
 
 /*
  *  If an attempt was made to configure POSIX objects and

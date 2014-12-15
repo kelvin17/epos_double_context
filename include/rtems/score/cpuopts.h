@@ -14,11 +14,6 @@
 /* if RTEMS_DEBUG is enabled */
 /* #undef RTEMS_DEBUG */
 
-
-
-/* if multiprocessing is enabled */
-/* #undef RTEMS_MULTIPROCESSING */
-
 /* if using newlib */
 #define RTEMS_NEWLIB 1
 //#undef RTEMS_NEWLIB
@@ -53,8 +48,6 @@
 /* disable strict order mutex */
 /* #undef __RTEMS_STRICT_ORDER_MUTEX__ */
 
-/* Define to 1 if ada/gnat bindings are built-in */
-/* #undef __RTEMS_ADA__ */
 
 /* major version portion of an RTEMS release */
 #define __RTEMS_MAJOR__ 4

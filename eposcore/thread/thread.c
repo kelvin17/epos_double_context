@@ -55,15 +55,10 @@ void _Thread_Handler_initialization(void)
   uint32_t     index;
   uint32_t     ticks_per_timeslice;
   uint32_t     maximum_extensions;
-  #if defined(RTEMS_MULTIPROCESSING)
-    uint32_t   maximum_proxies;
-  #endif
 
   ticks_per_timeslice = Configuration.ticks_per_timeslice;
   maximum_extensions  = Configuration.maximum_extensions;
-  #if defined(RTEMS_MULTIPROCESSING)
-    maximum_proxies   =  _Configuration_MP_table->maximum_proxies;
-  #endif
+
   /*
    * BOTH stacks hooks must be set or both must be NULL.
    * Do not allow mixture.
@@ -96,9 +91,6 @@ void _Thread_Handler_initialization(void)
   for ( index=0; index <= PRIORITY_MAXIMUM ; index++ )
     _Chain_Initialize_empty( &_Thread_Ready_chain[ index ] );
 
-#if defined(RTEMS_MULTIPROCESSING)
-  _Thread_MP_Handler_initialization( maximum_proxies );
-#endif
 
   /*
    *  Initialize this class of objects.
@@ -108,20 +100,11 @@ void _Thread_Handler_initialization(void)
     &_Thread_Internal_information,
     OBJECTS_INTERNAL_API,
     OBJECTS_INTERNAL_THREADS,
-#if defined(RTEMS_MULTIPROCESSING)
-    ( _System_state_Is_multiprocessing ) ?  2 : 1,
-#else
     1,
-#endif
     sizeof( Thread_Control ),
                                 /* size of this object's control block */
     false,                      /* true if names for this object are strings */
     8                           /* maximum length of each object's name */
-#if defined(RTEMS_MULTIPROCESSING)
-    ,
-    false,                      /* true if this is a global object class */
-    NULL                        /* Proxy extraction support callout */
-#endif
   );
 }
 

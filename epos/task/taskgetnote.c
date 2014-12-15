@@ -96,19 +96,6 @@ epos_status_code epos_task_get_note(
       _Thread_Enable_dispatch();
       return RTEMS_SUCCESSFUL;
 
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      _Thread_Executing->Wait.return_argument = note;
-
-      return _RTEMS_tasks_MP_Send_request_packet(
-        RTEMS_TASKS_MP_GET_NOTE_REQUEST,
-        id,
-        0,          /* Not used */
-        notepad,
-        0           /* Not used */
-      );
-#endif
-
     case OBJECTS_ERROR:
       break;
   }

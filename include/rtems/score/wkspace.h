@@ -49,7 +49,7 @@ extern "C" {
  *  RTEMS Executive Workspace.
  */
 SCORE_EXTERN Heap_Control _Workspace_Area;  /* executive heap header */
-
+SCORE_EXTERN Heap_Control _Workspace_Area_B;
 /** @brief Workspace Handler Initialization
  *
  *  This routine performs the initialization necessary for this handler.

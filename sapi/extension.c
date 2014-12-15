@@ -43,11 +43,6 @@ void _Extension_Manager_initialization(
     sizeof( Extension_Control ),/* size of this object's control block */
     FALSE,						/* true if the name is a string */
     RTEMS_MAXIMUM_NAME_LENGTH	/* maximum length of an object name */
-#if defined(RTEMS_MULTIPROCESSING)
-	  ,
-	  true, 					   /* true if this is a global object class */
-	  NULL						   /* Proxy extraction support callout */
-#endif
   );
 }
 
@@ -155,9 +150,6 @@ epos_status_code epos_extension_delete(
   the_extension = _Extension_Get( id, &location );
   switch ( location ) {
     case OBJECTS_ERROR:
-#if defined(RTEMS_MULTIPROCESSING)		
-    case OBJECTS_REMOTE:            /* should never return this */
-#endif
       return RTEMS_INVALID_ID;
     case OBJECTS_LOCAL:
       _User_extensions_Remove_set( &the_extension->Extension );

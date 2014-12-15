@@ -91,10 +91,6 @@ epos_status_code epos_timer_fire_after(
       _Watchdog_Insert_ticks( &the_timer->Ticker, ticks );
       _Thread_Enable_dispatch();
       return RTEMS_SUCCESSFUL;
-
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:            /* should never return this */
-#endif
     case OBJECTS_ERROR:
       break;
   }

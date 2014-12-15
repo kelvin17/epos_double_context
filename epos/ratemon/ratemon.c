@@ -51,11 +51,6 @@ void _Rate_monotonic_Manager_initialization(void)
     sizeof( Rate_monotonic_Control ),/* size of this object's control block */
     false,                           /* true if the name is a string */
     RTEMS_MAXIMUM_NAME_LENGTH        /* maximum length of an object name */
-#if defined(RTEMS_MULTIPROCESSING)
-    ,
-    false,                           /* true if this is a global object class */
-    NULL                             /* Proxy extraction support callout */
-#endif
   );
 }
 

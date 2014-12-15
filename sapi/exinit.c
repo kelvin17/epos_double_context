@@ -43,9 +43,6 @@
 #include <rtems/score/interr.h>
 #include <rtems/score/isr.h>
 #include <rtems/score/interrupts.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/mpci.h>
-#endif
 #include <rtems/score/priority.h>
 #include <rtems/score/thread.h>
 #include <rtems/score/tod.h>
@@ -70,33 +67,15 @@ void epos_initialize_data_structures(void)
    *           are disabled by boot_card().
    */
 
-  #if defined(RTEMS_MULTIPROCESSING)
-    /*
-     *  Initialize the system state based on whether this is an MP system.
-     *  In an MP configuration, internally we view single processor
-     *  systems as a very restricted multiprocessor system.
-     */
-    _Configuration_MP_table = Configuration.User_multiprocessing_table;
 
-    if ( _Configuration_MP_table == NULL ) {
-      _Configuration_MP_table =
-	(void *)&_Initialization_Default_multiprocessing_table;
-      _System_state_Handler_initialization( FALSE );
-    } else {
-      _System_state_Handler_initialization( TRUE );
-    }
-  #else
     _System_state_Handler_initialization( FALSE );
-  #endif
+
 
   /*
    * Initialize any target architecture specific support as early as possible
    */
 //  _CPU_Initialize();
 
-  #if defined(RTEMS_MULTIPROCESSING)
-    _Objects_MP_Handler_early_initialization();
-  #endif
 
   /*
    *  Do this as early as possible to ensure no debugging output
@@ -132,11 +111,6 @@ void epos_initialize_data_structures(void)
 
   _Thread_Handler_initialization();
 
-  #if defined(RTEMS_MULTIPROCESSING)
-    _Objects_MP_Handler_initialization();
-    _MPCI_Handler_initialization( RTEMS_TIMEOUT );
-  #endif
-
 /* MANAGERS */
 
   _RTEMS_API_Initialize();
@@ -169,11 +143,6 @@ void epos_initialize_data_structures(void)
 
 void epos_initialize_before_drivers(void)
 {
-
-  #if defined(RTEMS_MULTIPROCESSING)
-    _MPCI_Create_server();
-  #endif
-
   #if defined(FUNCTIONALITY_NOT_CURRENTLY_USED_BY_ANY_API)
     /*
      *  Run the API and BSPs predriver hook.
@@ -191,15 +160,6 @@ void epos_initialize_device_drivers(void)
    */
 
   _IO_Initialize_all_drivers();
-
-  #if defined(RTEMS_MULTIPROCESSING)
-    if ( _System_state_Is_multiprocessing ) {
-      _MPCI_Initialization();
-      _MPCI_Internal_packets_Send_process_packet(
-	MPCI_PACKETS_SYSTEM_VERIFY
-      );
-    }
-  #endif
 
   /*
    *  Run the APIs and BSPs postdriver hooks.

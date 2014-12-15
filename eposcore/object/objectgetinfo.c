@@ -46,17 +46,6 @@ Objects_Information *_Objects_Get_information(
   info = _Objects_Information_table[ the_api ][ the_class ];
   if ( !info )
     return NULL;
-
-  /*
-   *  In a multprocessing configuration, we may access remote objects.
-   *  Thus we may have 0 local instances and still have a valid object
-   *  pointer.
-   */
-  #if !defined(RTEMS_MULTIPROCESSING)
-    if ( info->maximum == 0 )
-      return NULL;
-  #endif
-
   return info;
 }
 

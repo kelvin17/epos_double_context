@@ -25,9 +25,6 @@
 #include <rtems/score/states.h>
 #include <rtems/score/thread.h>
 #include <rtems/score/wkspace.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/mpci.h>
-#endif
 #include <rtems/rtems/status.h>
 #include <rtems/rtems/attr.h>
 #include <rtems/rtems/message.h>
@@ -64,9 +61,6 @@ epos_status_code epos_message_queue_create(
 {
   register Message_queue_Control *the_message_queue;
   CORE_message_queue_Attributes   the_msgq_attributes;
-#if defined(RTEMS_MULTIPROCESSING)
-  bool                            is_global;
-#endif
 
   if ( !epos_is_name_valid( name ) )
     return RTEMS_INVALID_NAME;
@@ -74,31 +68,12 @@ epos_status_code epos_message_queue_create(
   if ( !id )
     return RTEMS_INVALID_ADDRESS;
 
-#if defined(RTEMS_MULTIPROCESSING)
-  if ( (is_global = _Attributes_Is_global( attribute_set ) ) &&
-       !_System_state_Is_multiprocessing )
-    return RTEMS_MP_NOT_CONFIGURED;
-#endif
 
   if ( count == 0 )
       return RTEMS_INVALID_NUMBER;
 
   if ( max_message_size == 0 )
       return RTEMS_INVALID_SIZE;
-
-#if defined(RTEMS_MULTIPROCESSING)
-#if 1
-  /*
-   * I am not 100% sure this should be an error.
-   * It seems reasonable to create a que with a large max size,
-   * and then just send smaller msgs from remote (or all) nodes.
-   */
-
-  if ( is_global && (_MPCI_table->maximum_packet_size < max_message_size) )
-    return RTEMS_INVALID_SIZE;
-#endif
-#endif
-
 
   _Thread_Disable_dispatch();              /* protects object pointer */
 
@@ -108,16 +83,6 @@ epos_status_code epos_message_queue_create(
     _Thread_Enable_dispatch();
     return RTEMS_TOO_MANY;
   }
-
-#if defined(RTEMS_MULTIPROCESSING)
-  if ( is_global &&
-    !( _Objects_MP_Allocate_and_open( &_Message_queue_Information,
-                              name, the_message_queue->Object.id, false ) ) ) {
-    _Message_queue_Free( the_message_queue );
-    _Thread_Enable_dispatch();
-    return RTEMS_TOO_MANY;
-  }
-#endif
 
   the_message_queue->attribute_set = attribute_set;
 
@@ -132,11 +97,6 @@ epos_status_code epos_message_queue_create(
            count,
            max_message_size
          ) ) {
-#if defined(RTEMS_MULTIPROCESSING)
-    if ( is_global )
-        _Objects_MP_Close(
-          &_Message_queue_Information, the_message_queue->Object.id);
-#endif
 
     _Message_queue_Free( the_message_queue );
     _Thread_Enable_dispatch();
@@ -150,17 +110,6 @@ epos_status_code epos_message_queue_create(
   );
 
   *id = the_message_queue->Object.id;
-
-#if defined(RTEMS_MULTIPROCESSING)
-  if ( is_global )
-    _Message_queue_MP_Send_process_packet(
-      MESSAGE_QUEUE_MP_ANNOUNCE_CREATE,
-      the_message_queue->Object.id,
-      name,
-      0
-    );
-#endif
-
   _Thread_Enable_dispatch();
   return RTEMS_SUCCESSFUL;
 }

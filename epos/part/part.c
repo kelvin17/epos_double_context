@@ -48,23 +48,7 @@ void _Partition_Manager_initialization(void)
     sizeof( Partition_Control ), /* size of this object's control block */
     false,                       /* true if the name is a string */
     RTEMS_MAXIMUM_NAME_LENGTH    /* maximum length of an object name */
-#if defined(RTEMS_MULTIPROCESSING)
-    ,
-    true,                        /* true if this is a global object class */
-    _Partition_MP_Send_extract_proxy  /* Proxy extraction support callout */
-#endif
   );
-
-  /*
-   *  Register the MP Process Packet routine.
-   */
-
-#if defined(RTEMS_MULTIPROCESSING)
-  _MPCI_Register_packet_processor(
-    MP_PACKET_PARTITION,
-    _Partition_MP_Process_packet
-  );
-#endif
 
 }
 

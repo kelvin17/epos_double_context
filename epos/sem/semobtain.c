@@ -42,9 +42,6 @@
 #include <rtems/score/states.h>
 #include <rtems/score/thread.h>
 #include <rtems/score/threadq.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/mpci.h>
-#endif
 #include <rtems/score/sysstate.h>
 
 #include <rtems/score/interr.h>
@@ -101,16 +98,6 @@ epos_status_code epos_semaphore_obtain(
       );
       return _Semaphore_Translate_core_semaphore_return_code(
                   _Thread_Executing->Wait.return_code );
-
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      return _Semaphore_MP_Send_request_packet(
-          SEMAPHORE_MP_OBTAIN_REQUEST,
-          id,
-          option_set,
-          timeout
-      );
-#endif
 
     case OBJECTS_ERROR:
       break;

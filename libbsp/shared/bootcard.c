@@ -155,8 +155,10 @@ int bootcard(
 //    Configuration.work_space_size  = work_area_size;
 //  } else {
     Configuration.work_space_start = (void*)0x800000;
+    Configuration.work_space_B_start = (void*)0xC00000;
 //  }
     Configuration.work_space_size=0x36000;
+    Configuration.work_space_B_size=0x36000;
 
   #if (BSP_DIRTY_MEMORY == 1)
 	printk("bsp_dirty_memory==1\n");

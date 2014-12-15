@@ -25,9 +25,6 @@
 #include <rtems/score/states.h>
 #include <rtems/score/thread.h>
 #include <rtems/score/wkspace.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/mpci.h>
-#endif
 #include <rtems/rtems/status.h>
 #include <rtems/rtems/attr.h>
 #include <rtems/rtems/message.h>
@@ -64,10 +61,6 @@ epos_status_code _Message_queue_Translate_core_message_queue_return_code (
    *  Check for proxy blocking first since it is out of range
    *  from the external status codes.
    */
-  #if defined(RTEMS_MULTIPROCESSING)
-    if ( _Thread_Is_proxy_blocking(status) )
-      return RTEMS_PROXY_BLOCKING;
-  #endif
 
   /*
    *  Internal consistency check for bad status from SuperCore

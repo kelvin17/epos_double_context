@@ -67,10 +67,6 @@ epos_status_code epos_task_create(
 {
   register Thread_Control *the_thread;
   bool                     is_fp;
-#if defined(RTEMS_MULTIPROCESSING)
-  Objects_MP_Control      *the_global_object = NULL;
-  bool                     is_global;
-#endif
   bool                     status;
   epos_attribute          the_attribute_set;
   Priority_Control         core_priority;
@@ -118,18 +114,6 @@ epos_status_code epos_task_create(
 
   core_priority = _RTEMS_tasks_Priority_to_Core( initial_priority );
 
-#if defined(RTEMS_MULTIPROCESSING)
-  if ( _Attributes_Is_global( the_attribute_set ) ) {
-
-    is_global = true;
-
-    if ( !_System_state_Is_multiprocessing )
-      return RTEMS_MP_NOT_CONFIGURED;
-
-  } else
-    is_global = false;
-#endif
-
   /*
    *  Make sure system is MP if this task is global
    */
@@ -156,18 +140,6 @@ epos_status_code epos_task_create(
     return RTEMS_TOO_MANY;
   }
 
-#if defined(RTEMS_MULTIPROCESSING)
-  if ( is_global ) {
-    the_global_object = _Objects_MP_Allocate_global_object();
-
-    if ( _Objects_MP_Is_null_global_object( the_global_object ) ) {
-      _RTEMS_tasks_Free( the_thread );
-      _RTEMS_Unlock_allocator();
-      return RTEMS_TOO_MANY;
-    }
-  }
-#endif
-
   /*
    *  Initialize the core thread for this task.
    */
@@ -189,10 +161,6 @@ epos_status_code epos_task_create(
   );
 
   if ( !status ) {
-#if defined(RTEMS_MULTIPROCESSING)
-    if ( is_global )
-      _Objects_MP_Free_global_object( the_global_object );
-#endif
     _RTEMS_tasks_Free( the_thread );
     _RTEMS_Unlock_allocator();
     return RTEMS_UNSATISFIED;
@@ -204,26 +172,6 @@ epos_status_code epos_task_create(
   asr->is_enabled = _Modes_Is_asr_disabled(initial_modes) ? false : true;
 
   *id = the_thread->Object.id;
-
-#if defined(RTEMS_MULTIPROCESSING)
-  the_thread->is_global = is_global;
-  if ( is_global ) {
-
-    _Objects_MP_Open(
-      &_RTEMS_tasks_Information,
-      the_global_object,
-      name,
-      the_thread->Object.id
-    );
-
-    _RTEMS_tasks_MP_Send_process_packet(
-      RTEMS_TASKS_MP_ANNOUNCE_CREATE,
-      the_thread->Object.id,
-      name
-    );
-
-   }
-#endif
 
   _RTEMS_Unlock_allocator();
   return RTEMS_SUCCESSFUL;

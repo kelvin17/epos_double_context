@@ -21,9 +21,6 @@
 #include <rtems/score/address.h>
 #include <rtems/score/chain.h>
 #include <rtems/score/object.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/objectmp.h>
-#endif
 #include <rtems/score/thread.h>
 #include <rtems/score/wkspace.h>
 #include <rtems/score/sysstate.h>

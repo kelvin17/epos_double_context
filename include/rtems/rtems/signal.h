@@ -77,10 +77,6 @@ epos_status_code epos_signal_send(
   epos_signal_set signal_set
 );
 
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/rtems/signalmp.h>
-#endif
-
 #ifdef __cplusplus
 }
 #endif

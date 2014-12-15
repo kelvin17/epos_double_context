@@ -75,16 +75,6 @@ epos_status_code epos_task_delete(
 	}
       #endif
 
-      #if defined(RTEMS_MULTIPROCESSING)
-        if ( the_thread->is_global ) {
-          _Objects_MP_Close( &_RTEMS_tasks_Information, the_thread->Object.id );
-          _RTEMS_tasks_MP_Send_process_packet(
-            RTEMS_TASKS_MP_ANNOUNCE_DELETE,
-            the_thread->Object.id,
-            0                                /* Not used */
-          );
-        }
-      #endif
 
       _Thread_Close( the_information, the_thread );
 
@@ -93,13 +83,6 @@ epos_status_code epos_task_delete(
       _RTEMS_Unlock_allocator();
       _Thread_Enable_dispatch();
       return RTEMS_SUCCESSFUL;
-
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      _RTEMS_Unlock_allocator();
-      _Thread_Dispatch();
-      return RTEMS_ILLEGAL_ON_REMOTE_OBJECT;
-#endif
 
     case OBJECTS_ERROR:
       break;

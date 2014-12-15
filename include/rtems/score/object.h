@@ -232,12 +232,10 @@ typedef enum {
   OBJECTS_INTERNAL_API = 1,
   OBJECTS_CLASSIC_API  = 2,
   OBJECTS_POSIX_API    = 3
- // OBJECTS_ITRON_API    = 4
 } Objects_APIs;
 
 
 /** This macro is used to generically specify the last API index. */
-//#define OBJECTS_APIS_LAST OBJECTS_ITRON_API
 #define OBJECTS_APIS_LAST OBJECTS_POSIX_API
 
 /**
@@ -307,9 +305,6 @@ typedef enum {
  *  an object with the specified ID.
  */
 typedef enum {
-#if defined(RTEMS_MULTIPROCESSING)
-  OBJECTS_REMOTE = 2,         /* object is remote */
-#endif
   OBJECTS_LOCAL  = 0,         /* object is local */
   OBJECTS_ERROR  = 1          /* id was invalid */
 } Objects_Locations;
@@ -374,29 +369,19 @@ typedef struct {
   uint16_t          name_length;
   /** This is this object class' method called when extracting a thread. */
   Objects_Thread_queue_Extract_callout extract;
-  #if defined(RTEMS_MULTIPROCESSING)
-    /** This is this object class' pointer to the global name table */
-    Chain_Control    *global_table;
-  #endif
 }   Objects_Information;
 
 /**
  *  The following is referenced to the node number of the local node.
  */
-#if defined(RTEMS_MULTIPROCESSING)
-SCORE_EXTERN uint16_t       _Objects_Local_node;
-#else
 #define _Objects_Local_node ((uint16_t)1)
-#endif
+
 
 /**
  *  The following is referenced to the number of nodes in the system.
  */
-#if defined(RTEMS_MULTIPROCESSING)
-SCORE_EXTERN uint16_t    _Objects_Maximum_nodes;
-#else
 #define _Objects_Maximum_nodes 1
-#endif
+
 
 /**
  *  The following is the list of information blocks per API for each object
@@ -498,11 +483,6 @@ void _Objects_Initialize_information (
   uint16_t             size,
   bool                 is_string,
   uint32_t             maximum_name_length
-#if defined(RTEMS_MULTIPROCESSING)
-  ,
-  bool                 supports_global,
-  Objects_Thread_queue_Extract_callout extract
-#endif
 );
 
 /**
@@ -970,9 +950,6 @@ RTEMS_INLINE_ROUTINE void _Objects_Open_string(
   Objects_Control     *the_object,
   const char          *name
 );
-#endif
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/objectmp.h>
 #endif
 
 #ifdef __cplusplus

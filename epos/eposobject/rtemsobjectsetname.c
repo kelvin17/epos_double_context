@@ -52,10 +52,6 @@ epos_status_code epos_object_set_name(
       _Objects_Set_name( information, the_object, name );
       _Thread_Enable_dispatch();
       return RTEMS_SUCCESSFUL;
-
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-#endif
     case OBJECTS_ERROR:
       break;
   }

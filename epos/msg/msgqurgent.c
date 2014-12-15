@@ -24,9 +24,6 @@
 #include <rtems/score/states.h>
 #include <rtems/score/thread.h>
 #include <rtems/score/wkspace.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/mpci.h>
-#endif
 #include <rtems/rtems/status.h>
 #include <rtems/rtems/attr.h>
 #include <rtems/rtems/message.h>
@@ -50,12 +47,6 @@
  *    error code       - if unsuccessful
  */
 
-#if defined(RTEMS_MULTIPROCESSING)
-#define MESSAGE_QUEUE_MP_HANDLER _Message_queue_Core_message_queue_mp_support
-#else
-#define MESSAGE_QUEUE_MP_HANDLER NULL
-#endif
-
 epos_status_code epos_message_queue_urgent(
   epos_id    id,
   const void *buffer,
@@ -78,7 +69,7 @@ epos_status_code epos_message_queue_urgent(
         buffer,
         size,
         id,
-        MESSAGE_QUEUE_MP_HANDLER,
+        NULL,
         false,   /* sender does not block */
         0        /* no timeout */
       );
@@ -91,17 +82,6 @@ epos_status_code epos_message_queue_urgent(
 
       return _Message_queue_Translate_core_message_queue_return_code(status);
 
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      return _Message_queue_MP_Send_request_packet(
-        MESSAGE_QUEUE_MP_URGENT_REQUEST,
-        id,
-        buffer,
-        &size,
-        0,                               /* option_set */
-        MPCI_DEFAULT_TIMEOUT
-      );
-#endif
 
     case OBJECTS_ERROR:
       break;

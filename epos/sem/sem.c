@@ -51,9 +51,6 @@
 #include <rtems/score/states.h>
 #include <rtems/score/thread.h>
 #include <rtems/score/threadq.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/mpci.h>
-#endif
 #include <rtems/score/sysstate.h>
 
 #include <rtems/score/interr.h>
@@ -80,23 +77,7 @@ void _Semaphore_Manager_initialization(void)
     sizeof( Semaphore_Control ), /* size of this object's control block */
     false,                       /* true if the name is a string */
     RTEMS_MAXIMUM_NAME_LENGTH    /* maximum length of an object name */
-#if defined(RTEMS_MULTIPROCESSING)
-    ,
-    true,                        /* true if this is a global object class */
-    _Semaphore_MP_Send_extract_proxy /* Proxy extraction support callout */
-#endif
   );
-
-  /*
-   *  Register the MP Process Packet routine.
-   */
-
-#if defined(RTEMS_MULTIPROCESSING)
-  _MPCI_Register_packet_processor(
-    MP_PACKET_SEMAPHORE,
-    _Semaphore_MP_Process_packet
-  );
-#endif
 
 }
 

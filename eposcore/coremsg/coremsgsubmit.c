@@ -67,11 +67,7 @@ CORE_message_queue_Status _CORE_message_queue_Submit(
   const void                                *buffer,
   size_t                                     size,
   Objects_Id                                 id,
-  #if defined(RTEMS_MULTIPROCESSING)
-    CORE_message_queue_API_mp_support_callout  api_message_queue_mp_support,
-  #else
-    CORE_message_queue_API_mp_support_callout  api_message_queue_mp_support  ,//__attribute__((unused)),
-  #endif
+  CORE_message_queue_API_mp_support_callout  api_message_queue_mp_support  ,//__attribute__((unused)),
   CORE_message_queue_Submit_types            submit_type,
   bool                                       wait,
   Watchdog_Interval                          timeout
@@ -98,10 +94,6 @@ CORE_message_queue_Status _CORE_message_queue_Submit(
       *(size_t *) the_thread->Wait.return_argument = size;
       the_thread->Wait.count = (uint32_t) submit_type;
 
-      #if defined(RTEMS_MULTIPROCESSING)
-        if ( !_Objects_Is_local_id( the_thread->Object.id ) )
-          (*api_message_queue_mp_support) ( the_thread, id );
-      #endif
       return CORE_MESSAGE_QUEUE_STATUS_SUCCESSFUL;
     }
   }

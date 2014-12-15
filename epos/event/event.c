@@ -38,12 +38,5 @@ void _Event_Manager_initialization( void )
 {
   _Event_Sync_state = THREAD_BLOCKING_OPERATION_SYNCHRONIZED;
 
-  /*
-   *  Register the MP Process Packet routine.
-   */
-
-#if defined(RTEMS_MULTIPROCESSING)
-  _MPCI_Register_packet_processor( MP_PACKET_EVENT, _Event_MP_Process_packet );
-#endif
 }
 

@@ -26,7 +26,6 @@ SECTIONS
    .bss :
    {
 	*(.bss)
-
    }  > DATA1
       .ccdata0 :
    {

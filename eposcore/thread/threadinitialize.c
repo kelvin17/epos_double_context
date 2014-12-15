@@ -70,12 +70,6 @@ bool _Thread_Initialize(
   bool                 extension_status;
   int                  i;
 
-  /*
-   *  Initialize the Ada self pointer
-   */
-  #if __RTEMS_ADA__
-    the_thread->epos_ada_self = NULL;
-  #endif
 
   /*
    *  Zero out all the allocated memory fields

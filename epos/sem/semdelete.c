@@ -42,9 +42,6 @@
 #include <rtems/score/states.h>
 #include <rtems/score/thread.h>
 #include <rtems/score/threadq.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/mpci.h>
-#endif
 #include <rtems/score/sysstate.h>
 
 #include <rtems/score/interr.h>
@@ -65,11 +62,8 @@
  *    error code       - if unsuccessful
  */
 
-#if defined(RTEMS_MULTIPROCESSING)
-#define SEMAPHORE_MP_OBJECT_WAS_DELETED _Semaphore_MP_Send_object_was_deleted
-#else
 #define SEMAPHORE_MP_OBJECT_WAS_DELETED NULL
-#endif
+
 
 epos_status_code epos_semaphore_delete(
   epos_id   id
@@ -106,27 +100,8 @@ epos_status_code epos_semaphore_delete(
 
       _Semaphore_Free( the_semaphore );
 
-#if defined(RTEMS_MULTIPROCESSING)
-      if ( _Attributes_Is_global( the_semaphore->attribute_set ) ) {
-
-        _Objects_MP_Close( &_Semaphore_Information, the_semaphore->Object.id );
-
-        _Semaphore_MP_Send_process_packet(
-          SEMAPHORE_MP_ANNOUNCE_DELETE,
-          the_semaphore->Object.id,
-          0,                         /* Not used */
-          0                          /* Not used */
-        );
-      }
-#endif
       _Thread_Enable_dispatch();
       return RTEMS_SUCCESSFUL;
-
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      _Thread_Dispatch();
-      return RTEMS_ILLEGAL_ON_REMOTE_OBJECT;
-#endif
 
     case OBJECTS_ERROR:
       break;

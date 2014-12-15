@@ -56,10 +56,6 @@ char *_Objects_Get_name_as_string(
   the_object = _Objects_Get( information, tmpId, &location );
   switch ( location ) {
 
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      /* not supported */
-#endif
     case OBJECTS_ERROR:
       return NULL;
 

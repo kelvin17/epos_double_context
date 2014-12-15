@@ -42,9 +42,6 @@
 #include <rtems/score/states.h>
 #include <rtems/score/thread.h>
 #include <rtems/score/threadq.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/mpci.h>
-#endif
 #include <rtems/score/sysstate.h>
 
 #include <rtems/score/interr.h>
@@ -88,19 +85,6 @@ epos_status_code epos_semaphore_create(
   if ( !id )
     return RTEMS_INVALID_ADDRESS;
 
-#if defined(RTEMS_MULTIPROCESSING)
-  if ( _Attributes_Is_global( attribute_set ) ) {
-
-    if ( !_System_state_Is_multiprocessing )
-      return RTEMS_MP_NOT_CONFIGURED;
-
-    if ( _Attributes_Is_inherit_priority( attribute_set ) ||
-         _Attributes_Is_priority_ceiling( attribute_set ) )
-      return RTEMS_NOT_DEFINED;
-
-  } else
-#endif
-
   if ( _Attributes_Is_inherit_priority( attribute_set ) ||
               _Attributes_Is_priority_ceiling( attribute_set ) ) {
 
@@ -125,16 +109,6 @@ epos_status_code epos_semaphore_create(
     _Thread_Enable_dispatch();
     return RTEMS_TOO_MANY;
   }
-
-#if defined(RTEMS_MULTIPROCESSING)
-  if ( _Attributes_Is_global( attribute_set ) &&
-       ! ( _Objects_MP_Allocate_and_open( &_Semaphore_Information, name,
-                            the_semaphore->Object.id, false ) ) ) {
-    _Semaphore_Free( the_semaphore );
-    _Thread_Enable_dispatch();
-    return RTEMS_TOO_MANY;
-  }
-#endif
 
   the_semaphore->attribute_set = attribute_set;
 
@@ -217,15 +191,6 @@ epos_status_code epos_semaphore_create(
 
   *id = the_semaphore->Object.id;
 
-#if defined(RTEMS_MULTIPROCESSING)
-  if ( _Attributes_Is_global( attribute_set ) )
-    _Semaphore_MP_Send_process_packet(
-      SEMAPHORE_MP_ANNOUNCE_CREATE,
-      the_semaphore->Object.id,
-      name,
-      0                          /* Not used */
-    );
-#endif
   _Thread_Enable_dispatch();
   return RTEMS_SUCCESSFUL;
 }

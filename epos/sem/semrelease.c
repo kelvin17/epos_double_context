@@ -42,9 +42,6 @@
 #include <rtems/score/states.h>
 #include <rtems/score/thread.h>
 #include <rtems/score/threadq.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/mpci.h>
-#endif
 #include <rtems/score/sysstate.h>
 
 #include <rtems/score/interr.h>
@@ -63,11 +60,7 @@
  *    error code        - if unsuccessful
  */
 
-#if defined(RTEMS_MULTIPROCESSING)
-#define MUTEX_MP_SUPPORT _Semaphore_Core_mutex_mp_support
-#else
 #define MUTEX_MP_SUPPORT NULL
-#endif
 
 epos_status_code epos_semaphore_release(
   epos_id   id
@@ -101,15 +94,6 @@ epos_status_code epos_semaphore_release(
           _Semaphore_Translate_core_semaphore_return_code( semaphore_status );
       }
 
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      return _Semaphore_MP_Send_request_packet(
-        SEMAPHORE_MP_RELEASE_REQUEST,
-        id,
-        0,                               /* Not used */
-        MPCI_DEFAULT_TIMEOUT
-      );
-#endif
 
     case OBJECTS_ERROR:
       break;

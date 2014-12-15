@@ -74,11 +74,7 @@ epos_status_code epos_partition_create(
   if ( !_Addresses_Is_aligned( starting_address ) )
      return RTEMS_INVALID_ADDRESS;
 
-#if defined(RTEMS_MULTIPROCESSING)
-  if ( _Attributes_Is_global( attribute_set ) &&
-       !_System_state_Is_multiprocessing )
-    return RTEMS_MP_NOT_CONFIGURED;
-#endif
+
 
   _Thread_Disable_dispatch();               /* prevents deletion */
 
@@ -89,15 +85,6 @@ epos_status_code epos_partition_create(
     return RTEMS_TOO_MANY;
   }
 
-#if defined(RTEMS_MULTIPROCESSING)
-  if ( _Attributes_Is_global( attribute_set ) &&
-       !( _Objects_MP_Allocate_and_open( &_Partition_Information, name,
-                            the_partition->Object.id, false ) ) ) {
-    _Partition_Free( the_partition );
-    _Thread_Enable_dispatch();
-    return RTEMS_TOO_MANY;
-  }
-#endif
 
   the_partition->starting_address      = starting_address;
   the_partition->length                = length;
@@ -115,15 +102,6 @@ epos_status_code epos_partition_create(
   );
 
   *id = the_partition->Object.id;
-#if defined(RTEMS_MULTIPROCESSING)
-  if ( _Attributes_Is_global( attribute_set ) )
-    _Partition_MP_Send_process_packet(
-      PARTITION_MP_ANNOUNCE_CREATE,
-      the_partition->Object.id,
-      name,
-      0                  /* Not used */
-    );
-#endif
 
   _Thread_Enable_dispatch();
   return RTEMS_SUCCESSFUL;

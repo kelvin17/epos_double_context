@@ -200,10 +200,6 @@ typedef uint32_t   epos_attribute;
 	
 	RTEMS_INLINE_ROUTINE bool _Attributes_Is_floating_point(epos_attribute attribute_set);
 
-	#if defined(RTEMS_MULTIPROCESSING)
-		RTEMS_INLINE_ROUTINE bool _Attributes_Is_global(epos_attribute attribute_set);
-	#endif
-
 	RTEMS_INLINE_ROUTINE bool _Attributes_Is_priority(epos_attribute attribute_set);
 
 	RTEMS_INLINE_ROUTINE bool _Attributes_Is_priority(epos_attribute attribute_set);

@@ -74,9 +74,6 @@ void _Rate_monotonic_Timeout(
       _Thread_Unnest_dispatch();
       break;
 
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:  /* impossible */
-#endif
     case OBJECTS_ERROR:
       break;
   }

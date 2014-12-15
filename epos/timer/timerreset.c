@@ -81,10 +81,6 @@ epos_status_code epos_timer_reset(
       }
       _Thread_Enable_dispatch();
       return status;
-
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:            /* should never return this */
-#endif
     case OBJECTS_ERROR:
       break;
   }

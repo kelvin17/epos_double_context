@@ -20,9 +20,6 @@
 #include <rtems/score/address.h>
 #include <rtems/score/chain.h>
 #include <rtems/score/object.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/objectmp.h>
-#endif
 #include <rtems/score/thread.h>
 #include <rtems/score/wkspace.h>
 #include <rtems/score/sysstate.h>
@@ -77,11 +74,6 @@ Objects_Control *_Objects_Get_isr_disable(
   _ISR_Enable( level );
   *location = OBJECTS_ERROR;
 
-#if defined(RTEMS_MULTIPROCESSING)
-  _Objects_MP_Is_remote( information, id, location, &the_object );
-  return the_object;
-#else
   return NULL;
-#endif
 }
 

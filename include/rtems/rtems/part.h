@@ -209,9 +209,6 @@ RTEMS_INLINE_ROUTINE bool _Partition_Is_null (
 
 #endif
 #endif
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/rtems/partmp.h>
-#endif
 
 #ifdef __cplusplus
 }

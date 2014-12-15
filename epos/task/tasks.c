@@ -261,11 +261,6 @@ void _RTEMS_tasks_Manager_initialization(void)
     sizeof( Thread_Control ),  /* size of this object's control block */
     false,                     /* true if the name is a string */
     RTEMS_MAXIMUM_NAME_LENGTH  /* maximum length of an object name */
-#if defined(RTEMS_MULTIPROCESSING)
-    ,
-    true,                      /* true if this is a global object class */
-    NULL                       /* Proxy extraction support callout */
-#endif
   );
 
   /*
@@ -275,17 +270,6 @@ void _RTEMS_tasks_Manager_initialization(void)
   _User_extensions_Add_API_set( &_RTEMS_tasks_User_extensions );
 
   _API_extensions_Add( &_RTEMS_tasks_API_extensions );
-
-  /*
-   *  Register the MP Process Packet routine.
-   */
-
-#if defined(RTEMS_MULTIPROCESSING)
-  _MPCI_Register_packet_processor(
-    MP_PACKET_TASKS,
-    _RTEMS_tasks_MP_Process_packet
-  );
-#endif
 
 }
 

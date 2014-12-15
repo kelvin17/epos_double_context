@@ -50,9 +50,6 @@ void _CORE_RWLock_Timeout(
   the_thread = _Thread_Get( id, &location );
   switch ( location ) {
     case OBJECTS_ERROR:
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:  /* impossible */
-#endif
       break;
     case OBJECTS_LOCAL:
       _Thread_queue_Process_timeout( the_thread );

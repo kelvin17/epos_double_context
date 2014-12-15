@@ -59,17 +59,6 @@ epos_status_code epos_event_send(
       _Thread_Enable_dispatch();
       return RTEMS_SUCCESSFUL;
 
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      return(
-        _Event_MP_Send_request_packet(
-          EVENT_MP_SEND_REQUEST,
-          id,
-          event_in
-        )
-      );
-#endif
-
     case OBJECTS_ERROR:
       break;
   }

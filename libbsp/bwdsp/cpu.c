@@ -98,12 +98,21 @@ void _CPU_Context_Initialize(
 	sp -= (N_REGS);
 
 	memset( sp+1, 0x0,  N_REGS );
-	
+/*	无B_Context的情况
 	*(sp+46) = (uint32_t)entry_point;	//ser
 	*(sp+45) = (uint32_t)entry_point;     //swir_r
 	*(sp+48) = (uint32_t)bp;			//u9
+*/
+	*(sp+47) = (uint32_t)entry_point;	//ser
+	*(sp+46) = (uint32_t)entry_point;     //swir_r
+	*(sp+49) = (uint32_t)bp;			//u9
 	*(sp+1)  = (uint32_t)bp;			//cur_stack_base
 	*(sp + (N_REGS-11) )= (uint32_t)entry_point;  //return_address
+
+	//对Context_B的管理:分配B的空间，并把基址存入Context_control对应成员中
+	void *context_B_start_address;
+  	context_B_start_address = _Heap_Allocate( &_Workspace_Area_B, N_B_REGS );
+	*(sp+2)  = (uint32_t)(context_B_start_address+N_B_REGS-1);
 	
 	*the_context= (Context_Control*)(sp+1);
 }

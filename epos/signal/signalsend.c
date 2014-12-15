@@ -77,15 +77,6 @@ epos_status_code epos_signal_send(
       _Thread_Enable_dispatch();
       return RTEMS_NOT_DEFINED;
 
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      return _Signal_MP_Send_request_packet(
-        SIGNAL_MP_SEND_REQUEST,
-        id,
-        signal_set
-      );
-#endif
-
     case OBJECTS_ERROR:
       break;
   }

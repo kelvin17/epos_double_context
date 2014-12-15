@@ -20,9 +20,6 @@
 #include <rtems/score/address.h>
 #include <rtems/score/chain.h>
 #include <rtems/score/object.h>
-#if defined(RTEMS_MULTIPROCESSING)
-#include <rtems/score/objectmp.h>
-#endif
 #include <rtems/score/thread.h>
 #include <rtems/score/wkspace.h>
 #include <rtems/score/sysstate.h>
@@ -92,18 +89,8 @@ Objects_Control *_Objects_Get(
     return NULL;
   }
 
-  /*
-   *  Object Id is not within this API and Class on this node.  So
-   *  it may be global in a multiprocessing system.  But it is clearly
-   *  invalid on a single processor system.
-   */
   *location = OBJECTS_ERROR;
-
-#if defined(RTEMS_MULTIPROCESSING)
-  _Objects_MP_Is_remote( information, id, location, &the_object );
-  return the_object;
-#else
   return NULL;
-#endif
+
 }
 

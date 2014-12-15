@@ -68,18 +68,6 @@ epos_status_code epos_partition_get_buffer(
       _Thread_Enable_dispatch();
       return RTEMS_UNSATISFIED;
 
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      _Thread_Executing->Wait.return_argument = buffer;
-      return(
-        _Partition_MP_Send_request_packet(
-          PARTITION_MP_GET_BUFFER_REQUEST,
-          id,
-          0           /* Not used */
-        )
-      );
-#endif
-
     case OBJECTS_ERROR:
       break;
   }

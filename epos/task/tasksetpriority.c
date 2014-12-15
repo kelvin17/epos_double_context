@@ -83,18 +83,6 @@ epos_status_code epos_task_set_priority(
       _Thread_Enable_dispatch();
       return RTEMS_SUCCESSFUL;
 
-#if defined(RTEMS_MULTIPROCESSING)
-    case OBJECTS_REMOTE:
-      _Thread_Executing->Wait.return_argument = old_priority;
-      return _RTEMS_tasks_MP_Send_request_packet(
-          RTEMS_TASKS_MP_SET_PRIORITY_REQUEST,
-          id,
-          new_priority,
-          0,          /* Not used */
-          0           /* Not used */
-      );
-#endif
-
     case OBJECTS_ERROR:
       break;
   }

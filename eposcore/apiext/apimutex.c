@@ -36,11 +36,6 @@ void _API_Mutex_Initialization(
     sizeof( API_Mutex_Control ), /* size of this object's control block */
     false,                       /* true if the name is a string */
     0                            /* maximum length of an object name */
-#if defined(RTEMS_MULTIPROCESSING)
-    ,
-    true,                        /* true if this is a global object class */
-    NULL                         /* Proxy extraction support callout */
-#endif
   );
 }
 

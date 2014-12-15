@@ -53,13 +53,8 @@
 
 uint32_t _CORE_barrier_Release(
   CORE_barrier_Control                *the_barrier,
-#if defined(RTEMS_MULTIPROCESSING)
-  Objects_Id                           id,
-  CORE_barrier_API_mp_support_callout  api_barrier_mp_support
-#else
   Objects_Id                           id ,
   CORE_barrier_API_mp_support_callout  api_barrier_mp_support 
-#endif
 )
 {
   Thread_Control *the_thread;
@@ -67,10 +62,6 @@ uint32_t _CORE_barrier_Release(
 
   count = 0;
   while ( (the_thread = _Thread_queue_Dequeue(&the_barrier->Wait_queue)) ) {
-#if defined(RTEMS_MULTIPROCESSING)
-    if ( !_Objects_Is_local_id( the_thread->Object.id ) )
-      (*api_barrier_mp_support) ( the_thread, id );
-#endif
     count++;
   }
   the_barrier->number_of_waiting_threads = 0;
