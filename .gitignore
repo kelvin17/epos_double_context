@@ -18,6 +18,5 @@ log
 *.dirstamp
 *.spin
 /testsuites/sp*/makefile
-*.asm
 !/libbsp
 

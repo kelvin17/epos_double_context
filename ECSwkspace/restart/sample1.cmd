@@ -4,6 +4,7 @@ MEMORY
     DATA0(rw): ORIGIN = 0x200000, LENGTH = 128K
     DATA1(rw): ORIGIN = 0x400000, LENGTH = 256K
     DATA2(rw): ORIGIN = 0x620000, LENGTH = 128K
+	DATA3(rw): ORIGIN = 0xA20000, LENGTH = 128K
     STACK(rw): ORIGIN = 0x600000, LENGTH = 32K
     HEAP(rw): ORIGIN = 0x610000, LENGTH = 32K
     DEBUG_INFO      :       ORIGIN =0x0	, LENGTH =1024K
@@ -27,7 +28,7 @@ SECTIONS
    {
 	*(.bss)
    }  > DATA1
-      .ccdata0 :
+  .ccdata0 :
    {
 	*(.ccdata0)
 
@@ -42,6 +43,11 @@ SECTIONS
 	*(.ccdata2)
 
    }  > DATA2
+    .ccdata3 :
+   {
+	*(.ccdata3)
+
+   }  > DATA3
   .debug_info :
   {
     *(.debug_info)

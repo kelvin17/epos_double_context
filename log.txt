@@ -1,0 +1,3888 @@
+diff --cc ECSwkspace/restart/sample1.cmd
+index c9accf1,c9accf1..5450f97
+--- a/ECSwkspace/restart/sample1.cmd
++++ b/ECSwkspace/restart/sample1.cmd
+@@@ -26,6 -26,6 +26,7 @@@ SECTION
+     .bss :
+     {
+  	*(.bss)
+++
+     }  > DATA1
+        .ccdata0 :
+     {
+diff --cc epos/barrier/barrier.c
+index e278020,e278020..ed4c594
+--- a/epos/barrier/barrier.c
++++ b/epos/barrier/barrier.c
+@@@ -33,7 -33,7 +33,9 @@@
+  #include <rtems/rtems/support.h>
+  #include <rtems/score/object.h>
+  #include <rtems/rtems/barrier.h>
+--
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  
+  /**
+   *  @brief _Barrier_Manager_initialization
+@@@ -54,5 -54,5 +56,10 @@@ void _Barrier_Manager_initialization(vo
+      sizeof( Barrier_Control ),     /* size of this object's control block */
+      false,                         /* true if the name is a string */
+      RTEMS_MAXIMUM_NAME_LENGTH      /* maximum length of an object name */
+++#if defined(RTEMS_MULTIPROCESSING)
+++    ,
+++    false,                         /* true if this is a global object class */
+++    NULL                           /* Proxy extraction support callout */
+++#endif
+    );
+  }
+diff --cc epos/barrier/barrierdelete.c
+index 2136768,2136768..8440e28
+--- a/epos/barrier/barrierdelete.c
++++ b/epos/barrier/barrierdelete.c
+@@@ -62,6 -62,6 +62,9 @@@ epos_status_code epos_barrier_delete
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/barrier/barrierrelease.c
+index 5d9d0e5,5d9d0e5..17efd9e
+--- a/epos/barrier/barrierrelease.c
++++ b/epos/barrier/barrierrelease.c
+@@@ -56,6 -56,6 +56,9 @@@ epos_status_code epos_barrier_release
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/barrier/barrierwait.c
+index 346575d,346575d..afe189d
+--- a/epos/barrier/barrierwait.c
++++ b/epos/barrier/barrierwait.c
+@@@ -59,6 -59,6 +59,9 @@@ epos_status_code epos_barrier_wait
+        return _Barrier_Translate_core_barrier_return_code(
+                  _Thread_Executing->Wait.return_code );
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/eposobject/rtemsobjectsetname.c
+index d730e8b,d730e8b..7e49d08
+--- a/epos/eposobject/rtemsobjectsetname.c
++++ b/epos/eposobject/rtemsobjectsetname.c
+@@@ -52,6 -52,6 +52,10 @@@ epos_status_code epos_object_set_name
+        _Objects_Set_name( information, the_object, name );
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/event/event.c
+index 7dc3131,7dc3131..0b2f30d
+--- a/epos/event/event.c
++++ b/epos/event/event.c
+@@@ -38,5 -38,5 +38,12 @@@ void _Event_Manager_initialization( voi
+  {
+    _Event_Sync_state = THREAD_BLOCKING_OPERATION_SYNCHRONIZED;
+  
+++  /*
+++   *  Register the MP Process Packet routine.
+++   */
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++  _MPCI_Register_packet_processor( MP_PACKET_EVENT, _Event_MP_Process_packet );
+++#endif
+  }
+  
+diff --cc epos/event/eventsend.c
+index 6482fbd,6482fbd..f4d5d56
+--- a/epos/event/eventsend.c
++++ b/epos/event/eventsend.c
+@@@ -59,6 -59,6 +59,17 @@@ epos_status_code epos_event_send
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      return(
+++        _Event_MP_Send_request_packet(
+++          EVENT_MP_SEND_REQUEST,
+++          id,
+++          event_in
+++        )
+++      );
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/event/eventtimeout.c
+index 7a04bc1,7a04bc1..f3ff174
+--- a/epos/event/eventtimeout.c
++++ b/epos/event/eventtimeout.c
+@@@ -84,6 -84,6 +84,9 @@@ void _Event_Timeout
+        _Thread_Unnest_dispatch();
+        break;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:  /* impossible */
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/msg/msg.c
+index d609ff8,d609ff8..fc08178
+--- a/epos/msg/msg.c
++++ b/epos/msg/msg.c
+@@@ -26,7 -26,7 +26,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+--
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/rtems/status.h>
+  #include <rtems/rtems/attr.h>
+  #include <rtems/rtems/message.h>
+@@@ -57,7 -57,7 +59,24 @@@ void _Message_queue_Manager_initializat
+                                    /* size of this object's control block */
+      false,                        /* true if names of this object are strings */
+      RTEMS_MAXIMUM_NAME_LENGTH     /* maximum length of each object's name */
+++#if defined(RTEMS_MULTIPROCESSING)
+++    ,
+++    true,                         /* true if this is a global object class */
+++    _Message_queue_MP_Send_extract_proxy
+++                                  /* Proxy extraction support callout */
+++#endif
+    );
+  
+++  /*
+++   *  Register the MP Process Packet routine.
+++   */
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++  _MPCI_Register_packet_processor(
+++    MP_PACKET_MESSAGE_QUEUE,
+++    _Message_queue_MP_Process_packet
+++  );
+++#endif
+++
+  }
+  
+diff --cc epos/msg/msgqallocate.c
+index a0db715,a0db715..cd49354
+--- a/epos/msg/msgqallocate.c
++++ b/epos/msg/msgqallocate.c
+@@@ -25,6 -25,6 +25,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/rtems/status.h>
+  #include <rtems/rtems/attr.h>
+  #include <rtems/rtems/message.h>
+diff --cc epos/msg/msgqbroadcast.c
+index 3d603e6,3d603e6..b84fd48
+--- a/epos/msg/msgqbroadcast.c
++++ b/epos/msg/msgqbroadcast.c
+@@@ -25,6 -25,6 +25,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/rtems/status.h>
+  #include <rtems/rtems/attr.h>
+  #include <rtems/rtems/message.h>
+@@@ -76,13 -76,13 +79,33 @@@ epos_status_code epos_message_queue_bro
+                        buffer,
+                        size,
+                        id,
+--                      NULL,
+++                      #if defined(RTEMS_MULTIPROCESSING)
+++                        _Message_queue_Core_message_queue_mp_support,
+++                      #else
+++                        NULL,
+++                      #endif
+                        count
+                      );
+  
+        _Thread_Enable_dispatch();
+        return
+          _Message_queue_Translate_core_message_queue_return_code( core_status );
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      _Thread_Executing->Wait.return_argument = count;
+++
+++      return
+++        _Message_queue_MP_Send_request_packet(
+++          MESSAGE_QUEUE_MP_BROADCAST_REQUEST,
+++          id,
+++          buffer,
+++          &size,
+++          0,                               /* option_set not used */
+++          MPCI_DEFAULT_TIMEOUT
+++        );
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/msg/msgqcreate.c
+index e792133,e792133..51f308c
+--- a/epos/msg/msgqcreate.c
++++ b/epos/msg/msgqcreate.c
+@@@ -25,6 -25,6 +25,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/rtems/status.h>
+  #include <rtems/rtems/attr.h>
+  #include <rtems/rtems/message.h>
+@@@ -61,6 -61,6 +64,9 @@@ epos_status_code epos_message_queue_cre
+  {
+    register Message_queue_Control *the_message_queue;
+    CORE_message_queue_Attributes   the_msgq_attributes;
+++#if defined(RTEMS_MULTIPROCESSING)
+++  bool                            is_global;
+++#endif
+  
+    if ( !epos_is_name_valid( name ) )
+      return RTEMS_INVALID_NAME;
+@@@ -68,6 -68,6 +74,11 @@@
+    if ( !id )
+      return RTEMS_INVALID_ADDRESS;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++  if ( (is_global = _Attributes_Is_global( attribute_set ) ) &&
+++       !_System_state_Is_multiprocessing )
+++    return RTEMS_MP_NOT_CONFIGURED;
+++#endif
+  
+    if ( count == 0 )
+        return RTEMS_INVALID_NUMBER;
+@@@ -75,6 -75,6 +86,20 @@@
+    if ( max_message_size == 0 )
+        return RTEMS_INVALID_SIZE;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++#if 1
+++  /*
+++   * I am not 100% sure this should be an error.
+++   * It seems reasonable to create a que with a large max size,
+++   * and then just send smaller msgs from remote (or all) nodes.
+++   */
+++
+++  if ( is_global && (_MPCI_table->maximum_packet_size < max_message_size) )
+++    return RTEMS_INVALID_SIZE;
+++#endif
+++#endif
+++
+++
+    _Thread_Disable_dispatch();              /* protects object pointer */
+  
+    the_message_queue = _Message_queue_Allocate();
+@@@ -84,6 -84,6 +109,16 @@@
+      return RTEMS_TOO_MANY;
+    }
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++  if ( is_global &&
+++    !( _Objects_MP_Allocate_and_open( &_Message_queue_Information,
+++                              name, the_message_queue->Object.id, false ) ) ) {
+++    _Message_queue_Free( the_message_queue );
+++    _Thread_Enable_dispatch();
+++    return RTEMS_TOO_MANY;
+++  }
+++#endif
+++
+    the_message_queue->attribute_set = attribute_set;
+  
+    if (_Attributes_Is_priority( attribute_set ) )
+@@@ -97,6 -97,6 +132,11 @@@
+             count,
+             max_message_size
+           ) ) {
+++#if defined(RTEMS_MULTIPROCESSING)
+++    if ( is_global )
+++        _Objects_MP_Close(
+++          &_Message_queue_Information, the_message_queue->Object.id);
+++#endif
+  
+      _Message_queue_Free( the_message_queue );
+      _Thread_Enable_dispatch();
+@@@ -110,6 -110,6 +150,17 @@@
+    );
+  
+    *id = the_message_queue->Object.id;
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++  if ( is_global )
+++    _Message_queue_MP_Send_process_packet(
+++      MESSAGE_QUEUE_MP_ANNOUNCE_CREATE,
+++      the_message_queue->Object.id,
+++      name,
+++      0
+++    );
+++#endif
+++
+    _Thread_Enable_dispatch();
+    return RTEMS_SUCCESSFUL;
+  }
+diff --cc epos/msg/msgqdelete.c
+index 851aef1,851aef1..b0ddeea
+--- a/epos/msg/msgqdelete.c
++++ b/epos/msg/msgqdelete.c
+@@@ -25,6 -25,6 +25,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/rtems/status.h>
+  #include <rtems/rtems/attr.h>
+  #include <rtems/rtems/message.h>
+@@@ -62,15 -62,15 +65,40 @@@ epos_status_code epos_message_queue_del
+  
+        _CORE_message_queue_Close(
+          &the_message_queue->message_queue,
+--         NULL,
+++        #if defined(RTEMS_MULTIPROCESSING)
+++          _Message_queue_MP_Send_object_was_deleted,
+++        #else
+++          NULL,
+++        #endif
+          CORE_MESSAGE_QUEUE_STATUS_WAS_DELETED
+        );
+  
+        _Message_queue_Free( the_message_queue );
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++      if ( _Attributes_Is_global( the_message_queue->attribute_set ) ) {
+++        _Objects_MP_Close(
+++          &_Message_queue_Information,
+++          the_message_queue->Object.id
+++        );
+++
+++        _Message_queue_MP_Send_process_packet(
+++          MESSAGE_QUEUE_MP_ANNOUNCE_DELETE,
+++          the_message_queue->Object.id,
+++          0,                                 /* Not used */
+++          0
+++        );
+++      }
+++#endif
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      _Thread_Dispatch();
+++      return RTEMS_ILLEGAL_ON_REMOTE_OBJECT;
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/msg/msgqflush.c
+index 6854161,6854161..3561296
+--- a/epos/msg/msgqflush.c
++++ b/epos/msg/msgqflush.c
+@@@ -25,6 -25,6 +25,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/rtems/status.h>
+  #include <rtems/rtems/attr.h>
+  #include <rtems/rtems/message.h>
+@@@ -68,6 -68,6 +71,21 @@@ epos_status_code epos_message_queue_flu
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      _Thread_Executing->Wait.return_argument = count;
+++
+++      return
+++        _Message_queue_MP_Send_request_packet(
+++          MESSAGE_QUEUE_MP_FLUSH_REQUEST,
+++          id,
+++          0,                               /* buffer not used */
+++          0,                               /* size */
+++          0,                               /* option_set not used */
+++          MPCI_DEFAULT_TIMEOUT
+++        );
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/msg/msgqgetnumberpending.c
+index 1f250d1,1f250d1..c5d311f
+--- a/epos/msg/msgqgetnumberpending.c
++++ b/epos/msg/msgqgetnumberpending.c
+@@@ -25,6 -25,6 +25,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/rtems/status.h>
+  #include <rtems/rtems/attr.h>
+  #include <rtems/rtems/message.h>
+@@@ -66,6 -66,6 +69,20 @@@ epos_status_code epos_message_queue_get
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      _Thread_Executing->Wait.return_argument = count;
+++
+++      return _Message_queue_MP_Send_request_packet(
+++          MESSAGE_QUEUE_MP_GET_NUMBER_PENDING_REQUEST,
+++          id,
+++          0,                               /* buffer not used */
+++          0,                               /* size */
+++          0,                               /* option_set not used */
+++          MPCI_DEFAULT_TIMEOUT
+++        );
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/msg/msgqident.c
+index a507140,a507140..9bac2c9
+--- a/epos/msg/msgqident.c
++++ b/epos/msg/msgqident.c
+@@@ -25,6 -25,6 +25,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/rtems/status.h>
+  #include <rtems/rtems/attr.h>
+  #include <rtems/rtems/message.h>
+diff --cc epos/msg/msgqreceive.c
+index 173bae4,173bae4..dc8a6a0
+--- a/epos/msg/msgqreceive.c
++++ b/epos/msg/msgqreceive.c
+@@@ -25,6 -25,6 +25,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/rtems/status.h>
+  #include <rtems/rtems/attr.h>
+  #include <rtems/rtems/message.h>
+@@@ -90,6 -90,6 +93,18 @@@ epos_status_code epos_message_queue_rec
+          _Thread_Executing->Wait.return_code
+        );
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      return _Message_queue_MP_Send_request_packet(
+++          MESSAGE_QUEUE_MP_RECEIVE_REQUEST,
+++          id,
+++          buffer,
+++          size,
+++          option_set,
+++          timeout
+++        );
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/msg/msgqsend.c
+index 955b776,955b776..f0f09cc
+--- a/epos/msg/msgqsend.c
++++ b/epos/msg/msgqsend.c
+@@@ -24,6 -24,6 +24,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/rtems/status.h>
+  #include <rtems/rtems/attr.h>
+  #include <rtems/rtems/message.h>
+@@@ -47,6 -47,6 +50,11 @@@
+   *    error code       - if unsuccessful
+   */
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++#define MESSAGE_QUEUE_MP_HANDLER _Message_queue_Core_message_queue_mp_support
+++#else
+++#define MESSAGE_QUEUE_MP_HANDLER NULL
+++#endif
+  
+  epos_status_code epos_message_queue_send(
+    epos_id    id,
+@@@ -70,7 -70,7 +78,7 @@@
+          buffer,
+          size,
+          id,
+--        NULL,
+++        MESSAGE_QUEUE_MP_HANDLER,
+          false,   /* sender does not block */
+          0        /* no timeout */
+        );
+@@@ -84,6 -84,6 +92,19 @@@
+  
+        return _Message_queue_Translate_core_message_queue_return_code(status);
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      return _Message_queue_MP_Send_request_packet(
+++        MESSAGE_QUEUE_MP_SEND_REQUEST,
+++        id,
+++        buffer,
+++        &size,
+++        0,                               /* option_set */
+++        MPCI_DEFAULT_TIMEOUT
+++      );
+++      break;
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/msg/msgqtranslatereturncode.c
+index e0b15ff,e0b15ff..2061b76
+--- a/epos/msg/msgqtranslatereturncode.c
++++ b/epos/msg/msgqtranslatereturncode.c
+@@@ -25,6 -25,6 +25,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/rtems/status.h>
+  #include <rtems/rtems/attr.h>
+  #include <rtems/rtems/message.h>
+@@@ -61,6 -61,6 +64,10 @@@ epos_status_code _Message_queue_Transla
+     *  Check for proxy blocking first since it is out of range
+     *  from the external status codes.
+     */
+++  #if defined(RTEMS_MULTIPROCESSING)
+++    if ( _Thread_Is_proxy_blocking(status) )
+++      return RTEMS_PROXY_BLOCKING;
+++  #endif
+  
+    /*
+     *  Internal consistency check for bad status from SuperCore
+diff --cc epos/msg/msgqurgent.c
+index dec755b,dec755b..84df7bd
+--- a/epos/msg/msgqurgent.c
++++ b/epos/msg/msgqurgent.c
+@@@ -24,6 -24,6 +24,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/rtems/status.h>
+  #include <rtems/rtems/attr.h>
+  #include <rtems/rtems/message.h>
+@@@ -47,6 -47,6 +50,12 @@@
+   *    error code       - if unsuccessful
+   */
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++#define MESSAGE_QUEUE_MP_HANDLER _Message_queue_Core_message_queue_mp_support
+++#else
+++#define MESSAGE_QUEUE_MP_HANDLER NULL
+++#endif
+++
+  epos_status_code epos_message_queue_urgent(
+    epos_id    id,
+    const void *buffer,
+@@@ -69,7 -69,7 +78,7 @@@
+          buffer,
+          size,
+          id,
+--        NULL,
+++        MESSAGE_QUEUE_MP_HANDLER,
+          false,   /* sender does not block */
+          0        /* no timeout */
+        );
+@@@ -82,6 -82,6 +91,17 @@@
+  
+        return _Message_queue_Translate_core_message_queue_return_code(status);
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      return _Message_queue_MP_Send_request_packet(
+++        MESSAGE_QUEUE_MP_URGENT_REQUEST,
+++        id,
+++        buffer,
+++        &size,
+++        0,                               /* option_set */
+++        MPCI_DEFAULT_TIMEOUT
+++      );
+++#endif
+  
+      case OBJECTS_ERROR:
+        break;
+diff --cc epos/part/part.c
+index f97cd66,f97cd66..2b3bcfc
+--- a/epos/part/part.c
++++ b/epos/part/part.c
+@@@ -48,7 -48,7 +48,23 @@@ void _Partition_Manager_initialization(
+      sizeof( Partition_Control ), /* size of this object's control block */
+      false,                       /* true if the name is a string */
+      RTEMS_MAXIMUM_NAME_LENGTH    /* maximum length of an object name */
+++#if defined(RTEMS_MULTIPROCESSING)
+++    ,
+++    true,                        /* true if this is a global object class */
+++    _Partition_MP_Send_extract_proxy  /* Proxy extraction support callout */
+++#endif
+    );
+  
+++  /*
+++   *  Register the MP Process Packet routine.
+++   */
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++  _MPCI_Register_packet_processor(
+++    MP_PACKET_PARTITION,
+++    _Partition_MP_Process_packet
+++  );
+++#endif
+++
+  }
+  
+diff --cc epos/part/partcreate.c
+index b861436,b861436..8dc40cf
+--- a/epos/part/partcreate.c
++++ b/epos/part/partcreate.c
+@@@ -74,7 -74,7 +74,11 @@@ epos_status_code epos_partition_create
+    if ( !_Addresses_Is_aligned( starting_address ) )
+       return RTEMS_INVALID_ADDRESS;
+  
+--
+++#if defined(RTEMS_MULTIPROCESSING)
+++  if ( _Attributes_Is_global( attribute_set ) &&
+++       !_System_state_Is_multiprocessing )
+++    return RTEMS_MP_NOT_CONFIGURED;
+++#endif
+  
+    _Thread_Disable_dispatch();               /* prevents deletion */
+  
+@@@ -85,6 -85,6 +89,15 @@@
+      return RTEMS_TOO_MANY;
+    }
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++  if ( _Attributes_Is_global( attribute_set ) &&
+++       !( _Objects_MP_Allocate_and_open( &_Partition_Information, name,
+++                            the_partition->Object.id, false ) ) ) {
+++    _Partition_Free( the_partition );
+++    _Thread_Enable_dispatch();
+++    return RTEMS_TOO_MANY;
+++  }
+++#endif
+  
+    the_partition->starting_address      = starting_address;
+    the_partition->length                = length;
+@@@ -102,6 -102,6 +115,15 @@@
+    );
+  
+    *id = the_partition->Object.id;
+++#if defined(RTEMS_MULTIPROCESSING)
+++  if ( _Attributes_Is_global( attribute_set ) )
+++    _Partition_MP_Send_process_packet(
+++      PARTITION_MP_ANNOUNCE_CREATE,
+++      the_partition->Object.id,
+++      name,
+++      0                  /* Not used */
+++    );
+++#endif
+  
+    _Thread_Enable_dispatch();
+    return RTEMS_SUCCESSFUL;
+diff --cc epos/part/partdelete.c
+index 2f62a18,2f62a18..11ef26c
+--- a/epos/part/partdelete.c
++++ b/epos/part/partdelete.c
+@@@ -55,6 -55,6 +55,22 @@@ epos_status_code epos_partition_delete
+        if ( the_partition->number_of_used_blocks == 0 ) {
+          _Objects_Close( &_Partition_Information, &the_partition->Object );
+          _Partition_Free( the_partition );
+++#if defined(RTEMS_MULTIPROCESSING)
+++        if ( _Attributes_Is_global( the_partition->attribute_set ) ) {
+++
+++          _Objects_MP_Close(
+++            &_Partition_Information,
+++            the_partition->Object.id
+++          );
+++
+++          _Partition_MP_Send_process_packet(
+++            PARTITION_MP_ANNOUNCE_DELETE,
+++            the_partition->Object.id,
+++            0,                         /* Not used */
+++            0                          /* Not used */
+++          );
+++        }
+++#endif
+  
+          _Thread_Enable_dispatch();
+          return RTEMS_SUCCESSFUL;
+@@@ -62,6 -62,6 +78,12 @@@
+        _Thread_Enable_dispatch();
+        return RTEMS_RESOURCE_IN_USE;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      _Thread_Dispatch();
+++      return RTEMS_ILLEGAL_ON_REMOTE_OBJECT;
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/part/partgetbuffer.c
+index 6d019e9,6d019e9..31b7f0b
+--- a/epos/part/partgetbuffer.c
++++ b/epos/part/partgetbuffer.c
+@@@ -68,6 -68,6 +68,18 @@@ epos_status_code epos_partition_get_buf
+        _Thread_Enable_dispatch();
+        return RTEMS_UNSATISFIED;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      _Thread_Executing->Wait.return_argument = buffer;
+++      return(
+++        _Partition_MP_Send_request_packet(
+++          PARTITION_MP_GET_BUFFER_REQUEST,
+++          id,
+++          0           /* Not used */
+++        )
+++      );
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/part/partreturnbuffer.c
+index 65cf5cb,65cf5cb..4451d82
+--- a/epos/part/partreturnbuffer.c
++++ b/epos/part/partreturnbuffer.c
+@@@ -63,6 -63,6 +63,15 @@@ epos_status_code epos_partition_return_
+        _Thread_Enable_dispatch();
+        return RTEMS_INVALID_ADDRESS;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      return _Partition_MP_Send_request_packet(
+++          PARTITION_MP_RETURN_BUFFER_REQUEST,
+++          id,
+++          buffer
+++        );
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/ratemon/ratemon.c
+index 12a85d6,12a85d6..a410625
+--- a/epos/ratemon/ratemon.c
++++ b/epos/ratemon/ratemon.c
+@@@ -51,6 -51,6 +51,11 @@@ void _Rate_monotonic_Manager_initializa
+      sizeof( Rate_monotonic_Control ),/* size of this object's control block */
+      false,                           /* true if the name is a string */
+      RTEMS_MAXIMUM_NAME_LENGTH        /* maximum length of an object name */
+++#if defined(RTEMS_MULTIPROCESSING)
+++    ,
+++    false,                           /* true if this is a global object class */
+++    NULL                             /* Proxy extraction support callout */
+++#endif
+    );
+  }
+  
+diff --cc epos/ratemon/ratemoncancel.c
+index b8ec343,b8ec343..747dd92
+--- a/epos/ratemon/ratemoncancel.c
++++ b/epos/ratemon/ratemoncancel.c
+@@@ -56,6 -56,6 +56,10 @@@ epos_status_code epos_rate_monotonic_ca
+        the_period->state = RATE_MONOTONIC_INACTIVE;
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/ratemon/ratemondelete.c
+index 08c792d,08c792d..f3b3951
+--- a/epos/ratemon/ratemondelete.c
++++ b/epos/ratemon/ratemondelete.c
+@@@ -55,6 -55,6 +55,9 @@@ epos_status_code epos_rate_monotonic_de
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:            /* should never return this */
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/ratemon/ratemongetstatistics.c
+index caeaa11,caeaa11..aa05bb8
+--- a/epos/ratemon/ratemongetstatistics.c
++++ b/epos/ratemon/ratemongetstatistics.c
+@@@ -80,6 -80,6 +80,9 @@@ epos_status_code epos_rate_monotonic_ge
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:            /* should never return this */
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/ratemon/ratemongetstatus.c
+index 2b25b95,2b25b95..24c6a5b
+--- a/epos/ratemon/ratemongetstatus.c
++++ b/epos/ratemon/ratemongetstatus.c
+@@@ -107,6 -107,6 +107,9 @@@ epos_status_code epos_rate_monotonic_ge
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:            /* should never return this */
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/ratemon/ratemonperiod.c
+index 674fc0f,674fc0f..3baeffd
+--- a/epos/ratemon/ratemonperiod.c
++++ b/epos/ratemon/ratemonperiod.c
+@@@ -369,6 -369,6 +369,9 @@@ epos_status_code epos_rate_monotonic_pe
+            break;
+        }
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:            /* should never return this */
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/ratemon/ratemonresetstatistics.c
+index 53a9b58,53a9b58..78fee22
+--- a/epos/ratemon/ratemonresetstatistics.c
++++ b/epos/ratemon/ratemonresetstatistics.c
+@@@ -54,6 -54,6 +54,9 @@@ epos_status_code epos_rate_monotonic_re
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:            /* should never return this */
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/ratemon/ratemontimeout.c
+index de1ea9a,de1ea9a..dc60b67
+--- a/epos/ratemon/ratemontimeout.c
++++ b/epos/ratemon/ratemontimeout.c
+@@@ -74,6 -74,6 +74,9 @@@ void _Rate_monotonic_Timeout
+        _Thread_Unnest_dispatch();
+        break;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:  /* impossible */
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/region/region.c
+index df44a96,df44a96..86d56d9
+--- a/epos/region/region.c
++++ b/epos/region/region.c
+@@@ -49,7 -49,7 +49,23 @@@ void _Region_Manager_initialization(voi
+      sizeof( Region_Control ),  /* size of this object's control block */
+      false,                     /* true if the name is a string */
+      RTEMS_MAXIMUM_NAME_LENGTH  /* maximum length of an object name */
+++#if defined(RTEMS_MULTIPROCESSING)
+++    ,
+++    false,                     /* true if this is a global object class */
+++    NULL                       /* Proxy extraction support callout */
+++#endif
+    );
+  
+++  /*
+++   *  Register the MP Process Packet routine.
+++   */
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++  _MPCI_Register_packet_processor(
+++    MP_PACKET_REGION,
+++    0  /* XXX _Region_MP_Process_packet */
+++  );
+++#endif
+++
+  }
+  
+diff --cc epos/region/regiondelete.c
+index f013710,f013710..378784c
+--- a/epos/region/regiondelete.c
++++ b/epos/region/regiondelete.c
+@@@ -66,6 -66,6 +66,11 @@@ epos_status_code epos_region_delete
+          }
+          break;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++      case OBJECTS_REMOTE:        /* this error cannot be returned */
+++        break;
+++#endif
+++
+        case OBJECTS_ERROR:
+        default:
+          return_status = RTEMS_INVALID_ID;
+diff --cc epos/region/regionextend.c
+index d911632,d911632..0f0d0a0
+--- a/epos/region/regionextend.c
++++ b/epos/region/regionextend.c
+@@@ -82,6 -82,6 +82,11 @@@ epos_status_code epos_region_extend
+          }
+          break;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++      case OBJECTS_REMOTE:        /* this error cannot be returned */
+++        break;
+++#endif
+++
+        case OBJECTS_ERROR:
+        default:
+          return_status = RTEMS_INVALID_ID;
+diff --cc epos/region/regiongetfreeinfo.c
+index 95e3a20,95e3a20..387dad7
+--- a/epos/region/regiongetfreeinfo.c
++++ b/epos/region/regiongetfreeinfo.c
+@@@ -72,6 -72,6 +72,11 @@@ epos_status_code epos_region_get_free_i
+          return_status = RTEMS_SUCCESSFUL;
+          break;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++      case OBJECTS_REMOTE:        /* this error cannot be returned */
+++        break;
+++#endif
+++
+        case OBJECTS_ERROR:
+        default:
+          return_status = RTEMS_INVALID_ID;
+diff --cc epos/region/regiongetinfo.c
+index 2f18438,2f18438..09d9b0e
+--- a/epos/region/regiongetinfo.c
++++ b/epos/region/regiongetinfo.c
+@@@ -64,6 -64,6 +64,11 @@@ epos_status_code epos_region_get_inform
+          return_status = RTEMS_SUCCESSFUL;
+          break;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++      case OBJECTS_REMOTE:        /* this error cannot be returned */
+++        break;
+++#endif
+++
+        case OBJECTS_ERROR:
+        default:
+          return_status = RTEMS_INVALID_ID;
+diff --cc epos/region/regiongetsegment.c
+index a295c5c,a295c5c..fa199f9
+--- a/epos/region/regiongetsegment.c
++++ b/epos/region/regiongetsegment.c
+@@@ -115,6 -115,6 +115,11 @@@ epos_status_code epos_region_get_segmen
+          }
+          break;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++      case OBJECTS_REMOTE:        /* this error cannot be returned */
+++        break;
+++#endif
+++
+        case OBJECTS_ERROR:
+        default:
+          return_status = RTEMS_INVALID_ID;
+diff --cc epos/region/regiongetsegmentsize.c
+index 7ed42cd,7ed42cd..838bfc0
+--- a/epos/region/regiongetsegmentsize.c
++++ b/epos/region/regiongetsegmentsize.c
+@@@ -69,6 -69,6 +69,11 @@@ epos_status_code epos_region_get_segmen
+            return_status = RTEMS_INVALID_ADDRESS;
+          break;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++      case OBJECTS_REMOTE:        /* this error cannot be returned */
+++        break;
+++#endif
+++
+        case OBJECTS_ERROR:
+          return_status = RTEMS_INVALID_ID;
+          break;
+diff --cc epos/region/regionresizesegment.c
+index 4056d69,4056d69..2437a72
+--- a/epos/region/regionresizesegment.c
++++ b/epos/region/regionresizesegment.c
+@@@ -93,6 -93,6 +93,11 @@@ epos_status_code epos_region_resize_seg
+          return RTEMS_INVALID_ADDRESS;
+          break;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++      case OBJECTS_REMOTE:        /* this error cannot be returned */
+++        break;
+++#endif
+++
+        case OBJECTS_ERROR:
+        default:
+          return_status = RTEMS_INVALID_ID;
+diff --cc epos/region/regionreturnsegment.c
+index 35389ec,35389ec..3077ed4
+--- a/epos/region/regionreturnsegment.c
++++ b/epos/region/regionreturnsegment.c
+@@@ -95,6 -95,6 +95,11 @@@ epos_status_code epos_region_return_seg
+  #endif
+          break;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++      case OBJECTS_REMOTE:        /* this error cannot be returned */
+++        break;
+++#endif
+++
+        case OBJECTS_ERROR:
+        default:
+          return_status = RTEMS_INVALID_ID;
+diff --cc epos/sem/sem.c
+index 23b2ca7,23b2ca7..2996b87
+--- a/epos/sem/sem.c
++++ b/epos/sem/sem.c
+@@@ -51,6 -51,6 +51,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/threadq.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/score/sysstate.h>
+  
+  #include <rtems/score/interr.h>
+@@@ -77,7 -77,7 +80,23 @@@ void _Semaphore_Manager_initialization(
+      sizeof( Semaphore_Control ), /* size of this object's control block */
+      false,                       /* true if the name is a string */
+      RTEMS_MAXIMUM_NAME_LENGTH    /* maximum length of an object name */
+++#if defined(RTEMS_MULTIPROCESSING)
+++    ,
+++    true,                        /* true if this is a global object class */
+++    _Semaphore_MP_Send_extract_proxy /* Proxy extraction support callout */
+++#endif
+++  );
+++
+++  /*
+++   *  Register the MP Process Packet routine.
+++   */
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++  _MPCI_Register_packet_processor(
+++    MP_PACKET_SEMAPHORE,
+++    _Semaphore_MP_Process_packet
+    );
+++#endif
+  
+  }
+  
+diff --cc epos/sem/semcreate.c
+index c2c72c3,c2c72c3..dfc0ce6
+--- a/epos/sem/semcreate.c
++++ b/epos/sem/semcreate.c
+@@@ -42,6 -42,6 +42,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/threadq.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/score/sysstate.h>
+  
+  #include <rtems/score/interr.h>
+@@@ -85,6 -85,6 +88,19 @@@ epos_status_code epos_semaphore_create
+    if ( !id )
+      return RTEMS_INVALID_ADDRESS;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++  if ( _Attributes_Is_global( attribute_set ) ) {
+++
+++    if ( !_System_state_Is_multiprocessing )
+++      return RTEMS_MP_NOT_CONFIGURED;
+++
+++    if ( _Attributes_Is_inherit_priority( attribute_set ) ||
+++         _Attributes_Is_priority_ceiling( attribute_set ) )
+++      return RTEMS_NOT_DEFINED;
+++
+++  } else
+++#endif
+++
+    if ( _Attributes_Is_inherit_priority( attribute_set ) ||
+                _Attributes_Is_priority_ceiling( attribute_set ) ) {
+  
+@@@ -110,6 -110,6 +126,16 @@@
+      return RTEMS_TOO_MANY;
+    }
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++  if ( _Attributes_Is_global( attribute_set ) &&
+++       ! ( _Objects_MP_Allocate_and_open( &_Semaphore_Information, name,
+++                            the_semaphore->Object.id, false ) ) ) {
+++    _Semaphore_Free( the_semaphore );
+++    _Thread_Enable_dispatch();
+++    return RTEMS_TOO_MANY;
+++  }
+++#endif
+++
+    the_semaphore->attribute_set = attribute_set;
+  
+    /*
+@@@ -191,6 -191,6 +217,15 @@@
+  
+    *id = the_semaphore->Object.id;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++  if ( _Attributes_Is_global( attribute_set ) )
+++    _Semaphore_MP_Send_process_packet(
+++      SEMAPHORE_MP_ANNOUNCE_CREATE,
+++      the_semaphore->Object.id,
+++      name,
+++      0                          /* Not used */
+++    );
+++#endif
+    _Thread_Enable_dispatch();
+    return RTEMS_SUCCESSFUL;
+  }
+diff --cc epos/sem/semdelete.c
+index b1fda7c,b1fda7c..b9d628f
+--- a/epos/sem/semdelete.c
++++ b/epos/sem/semdelete.c
+@@@ -42,6 -42,6 +42,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/threadq.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/score/sysstate.h>
+  
+  #include <rtems/score/interr.h>
+@@@ -62,8 -62,8 +65,11 @@@
+   *    error code       - if unsuccessful
+   */
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++#define SEMAPHORE_MP_OBJECT_WAS_DELETED _Semaphore_MP_Send_object_was_deleted
+++#else
+  #define SEMAPHORE_MP_OBJECT_WAS_DELETED NULL
+--
+++#endif
+  
+  epos_status_code epos_semaphore_delete(
+    epos_id   id
+@@@ -100,9 -100,9 +106,28 @@@
+  
+        _Semaphore_Free( the_semaphore );
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++      if ( _Attributes_Is_global( the_semaphore->attribute_set ) ) {
+++
+++        _Objects_MP_Close( &_Semaphore_Information, the_semaphore->Object.id );
+++
+++        _Semaphore_MP_Send_process_packet(
+++          SEMAPHORE_MP_ANNOUNCE_DELETE,
+++          the_semaphore->Object.id,
+++          0,                         /* Not used */
+++          0                          /* Not used */
+++        );
+++      }
+++#endif
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      _Thread_Dispatch();
+++      return RTEMS_ILLEGAL_ON_REMOTE_OBJECT;
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/sem/semflush.c
+index 03b2d54,03b2d54..c268e34
+--- a/epos/sem/semflush.c
++++ b/epos/sem/semflush.c
+@@@ -33,6 -33,6 +33,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/threadq.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/score/sysstate.h>
+  
+  #include <rtems/score/interr.h>
+@@@ -52,9 -52,9 +55,11 @@@
+   *    error code       - if unsuccessful
+   */
+  
+--
+++#if defined(RTEMS_MULTIPROCESSING)
+++#define SEND_OBJECT_WAS_DELETED _Semaphore_MP_Send_object_was_deleted
+++#else
+  #define SEND_OBJECT_WAS_DELETED NULL
+--
+++#endif
+  
+  epos_status_code epos_semaphore_flush(
+    epos_id        id
+@@@ -83,6 -83,6 +88,12 @@@
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      _Thread_Dispatch();
+++      return RTEMS_ILLEGAL_ON_REMOTE_OBJECT;
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/sem/semident.c
+index c0da54b,c0da54b..c82699d
+--- a/epos/sem/semident.c
++++ b/epos/sem/semident.c
+@@@ -42,6 -42,6 +42,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/threadq.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/score/sysstate.h>
+  
+  #include <rtems/score/interr.h>
+diff --cc epos/sem/semobtain.c
+index 04f7cf9,04f7cf9..8ced9c7
+--- a/epos/sem/semobtain.c
++++ b/epos/sem/semobtain.c
+@@@ -42,6 -42,6 +42,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/threadq.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/score/sysstate.h>
+  
+  #include <rtems/score/interr.h>
+@@@ -99,6 -99,6 +102,16 @@@ epos_status_code epos_semaphore_obtain
+        return _Semaphore_Translate_core_semaphore_return_code(
+                    _Thread_Executing->Wait.return_code );
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      return _Semaphore_MP_Send_request_packet(
+++          SEMAPHORE_MP_OBTAIN_REQUEST,
+++          id,
+++          option_set,
+++          timeout
+++      );
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+  
+diff --cc epos/sem/semrelease.c
+index 09be07a,09be07a..8545f2e
+--- a/epos/sem/semrelease.c
++++ b/epos/sem/semrelease.c
+@@@ -42,6 -42,6 +42,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/threadq.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/score/sysstate.h>
+  
+  #include <rtems/score/interr.h>
+@@@ -60,7 -60,7 +63,11 @@@
+   *    error code        - if unsuccessful
+   */
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++#define MUTEX_MP_SUPPORT _Semaphore_Core_mutex_mp_support
+++#else
+  #define MUTEX_MP_SUPPORT NULL
+++#endif
+  
+  epos_status_code epos_semaphore_release(
+    epos_id   id
+@@@ -94,6 -94,6 +101,15 @@@
+            _Semaphore_Translate_core_semaphore_return_code( semaphore_status );
+        }
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      return _Semaphore_MP_Send_request_packet(
+++        SEMAPHORE_MP_RELEASE_REQUEST,
+++        id,
+++        0,                               /* Not used */
+++        MPCI_DEFAULT_TIMEOUT
+++      );
+++#endif
+  
+      case OBJECTS_ERROR:
+        break;
+diff --cc epos/sem/semtranslatereturncode.c
+index 12cbe9c,12cbe9c..4868435
+--- a/epos/sem/semtranslatereturncode.c
++++ b/epos/sem/semtranslatereturncode.c
+@@@ -42,6 -42,6 +42,9 @@@
+  #include <rtems/score/states.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/threadq.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/score/sysstate.h>
+  
+  #include <rtems/score/interr.h>
+@@@ -75,6 -75,6 +78,13 @@@ epos_status_code _Semaphore_Translate_c
+    uint32_t   status
+  )
+  {
+++  /*
+++   *  If this thread is blocking waiting for a result on a remote operation.
+++   */
+++  #if defined(RTEMS_MULTIPROCESSING)
+++    if ( _Thread_Is_proxy_blocking(status) )
+++      return RTEMS_PROXY_BLOCKING;
+++  #endif
+  
+    /*
+     *  Internal consistency check for bad status from SuperCore
+@@@ -110,6 -110,6 +120,10 @@@ epos_status_code _Semaphore_Translate_c
+    uint32_t   status
+  )
+  {
+++  #if defined(RTEMS_MULTIPROCESSING)
+++    if ( _Thread_Is_proxy_blocking(status) )
+++      return RTEMS_PROXY_BLOCKING;
+++  #endif
+    /*
+     *  Internal consistency check for bad status from SuperCore
+     */
+diff --cc epos/signal/signal.c
+index 077c02b,077c02b..b0f5282
+--- a/epos/signal/signal.c
++++ b/epos/signal/signal.c
+@@@ -38,4 -38,4 +38,14 @@@
+  
+  void _Signal_Manager_initialization( void )
+  {
+++  /*
+++   *  Register the MP Process Packet routine.
+++   */
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++  _MPCI_Register_packet_processor(
+++    MP_PACKET_SIGNAL,
+++    _Signal_MP_Process_packet
+++  );
+++#endif
+  }
+diff --cc epos/signal/signalsend.c
+index cc36c19,cc36c19..176e0f6
+--- a/epos/signal/signalsend.c
++++ b/epos/signal/signalsend.c
+@@@ -77,6 -77,6 +77,15 @@@ epos_status_code epos_signal_send
+        _Thread_Enable_dispatch();
+        return RTEMS_NOT_DEFINED;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      return _Signal_MP_Send_request_packet(
+++        SIGNAL_MP_SEND_REQUEST,
+++        id,
+++        signal_set
+++      );
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/task/taskcreate.c
+index a6e5aca,a6e5aca..e6fa165
+--- a/epos/task/taskcreate.c
++++ b/epos/task/taskcreate.c
+@@@ -67,6 -67,6 +67,10 @@@ epos_status_code epos_task_create
+  {
+    register Thread_Control *the_thread;
+    bool                     is_fp;
+++#if defined(RTEMS_MULTIPROCESSING)
+++  Objects_MP_Control      *the_global_object = NULL;
+++  bool                     is_global;
+++#endif
+    bool                     status;
+    epos_attribute          the_attribute_set;
+    Priority_Control         core_priority;
+@@@ -114,6 -114,6 +118,18 @@@
+  
+    core_priority = _RTEMS_tasks_Priority_to_Core( initial_priority );
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++  if ( _Attributes_Is_global( the_attribute_set ) ) {
+++
+++    is_global = true;
+++
+++    if ( !_System_state_Is_multiprocessing )
+++      return RTEMS_MP_NOT_CONFIGURED;
+++
+++  } else
+++    is_global = false;
+++#endif
+++
+    /*
+     *  Make sure system is MP if this task is global
+     */
+@@@ -140,6 -140,6 +156,18 @@@
+      return RTEMS_TOO_MANY;
+    }
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++  if ( is_global ) {
+++    the_global_object = _Objects_MP_Allocate_global_object();
+++
+++    if ( _Objects_MP_Is_null_global_object( the_global_object ) ) {
+++      _RTEMS_tasks_Free( the_thread );
+++      _RTEMS_Unlock_allocator();
+++      return RTEMS_TOO_MANY;
+++    }
+++  }
+++#endif
+++
+    /*
+     *  Initialize the core thread for this task.
+     */
+@@@ -161,6 -161,6 +189,10 @@@
+    );
+  
+    if ( !status ) {
+++#if defined(RTEMS_MULTIPROCESSING)
+++    if ( is_global )
+++      _Objects_MP_Free_global_object( the_global_object );
+++#endif
+      _RTEMS_tasks_Free( the_thread );
+      _RTEMS_Unlock_allocator();
+      return RTEMS_UNSATISFIED;
+@@@ -173,6 -173,6 +205,26 @@@
+  
+    *id = the_thread->Object.id;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++  the_thread->is_global = is_global;
+++  if ( is_global ) {
+++
+++    _Objects_MP_Open(
+++      &_RTEMS_tasks_Information,
+++      the_global_object,
+++      name,
+++      the_thread->Object.id
+++    );
+++
+++    _RTEMS_tasks_MP_Send_process_packet(
+++      RTEMS_TASKS_MP_ANNOUNCE_CREATE,
+++      the_thread->Object.id,
+++      name
+++    );
+++
+++   }
+++#endif
+++
+    _RTEMS_Unlock_allocator();
+    return RTEMS_SUCCESSFUL;
+  }
+diff --cc epos/task/taskdelete.c
+index e57f100,e57f100..795498f
+--- a/epos/task/taskdelete.c
++++ b/epos/task/taskdelete.c
+@@@ -75,6 -75,6 +75,16 @@@ epos_status_code epos_task_delete
+  	}
+        #endif
+  
+++      #if defined(RTEMS_MULTIPROCESSING)
+++        if ( the_thread->is_global ) {
+++          _Objects_MP_Close( &_RTEMS_tasks_Information, the_thread->Object.id );
+++          _RTEMS_tasks_MP_Send_process_packet(
+++            RTEMS_TASKS_MP_ANNOUNCE_DELETE,
+++            the_thread->Object.id,
+++            0                                /* Not used */
+++          );
+++        }
+++      #endif
+  
+        _Thread_Close( the_information, the_thread );
+  
+@@@ -84,6 -84,6 +94,13 @@@
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      _RTEMS_Unlock_allocator();
+++      _Thread_Dispatch();
+++      return RTEMS_ILLEGAL_ON_REMOTE_OBJECT;
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/task/taskgetnote.c
+index 50683b8,50683b8..f9efc0f
+--- a/epos/task/taskgetnote.c
++++ b/epos/task/taskgetnote.c
+@@@ -96,6 -96,6 +96,19 @@@ epos_status_code epos_task_get_note
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      _Thread_Executing->Wait.return_argument = note;
+++
+++      return _RTEMS_tasks_MP_Send_request_packet(
+++        RTEMS_TASKS_MP_GET_NOTE_REQUEST,
+++        id,
+++        0,          /* Not used */
+++        notepad,
+++        0           /* Not used */
+++      );
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/task/taskissuspended.c
+index 91551a2,91551a2..841cfe6
+--- a/epos/task/taskissuspended.c
++++ b/epos/task/taskissuspended.c
+@@@ -67,6 -67,6 +67,12 @@@ epos_status_code epos_task_is_suspended
+        _Thread_Enable_dispatch();
+        return RTEMS_ALREADY_SUSPENDED;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      _Thread_Dispatch();
+++      return RTEMS_ILLEGAL_ON_REMOTE_OBJECT;
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/task/taskrestart.c
+index c6d2083,c6d2083..0b22974
+--- a/epos/task/taskrestart.c
++++ b/epos/task/taskrestart.c
+@@@ -70,6 -70,6 +70,12 @@@ epos_status_code epos_task_restart
+        _Thread_Enable_dispatch();
+        return RTEMS_INCORRECT_STATE;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      _Thread_Dispatch();
+++      return RTEMS_ILLEGAL_ON_REMOTE_OBJECT;
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/task/taskresume.c
+index 3eb4435,3eb4435..1e968e0
+--- a/epos/task/taskresume.c
++++ b/epos/task/taskresume.c
+@@@ -67,6 -67,6 +67,17 @@@ epos_status_code epos_task_resume
+        _Thread_Enable_dispatch();
+        return RTEMS_INCORRECT_STATE;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      return _RTEMS_tasks_MP_Send_request_packet(
+++          RTEMS_TASKS_MP_RESUME_REQUEST,
+++          id,
+++          0,          /* Not used */
+++          0,          /* Not used */
+++          0           /* Not used */
+++        );
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/task/tasks.c
+index 37908ce,37908ce..50ff001
+--- a/epos/task/tasks.c
++++ b/epos/task/tasks.c
+@@@ -261,6 -261,6 +261,11 @@@ void _RTEMS_tasks_Manager_initializatio
+      sizeof( Thread_Control ),  /* size of this object's control block */
+      false,                     /* true if the name is a string */
+      RTEMS_MAXIMUM_NAME_LENGTH  /* maximum length of an object name */
+++#if defined(RTEMS_MULTIPROCESSING)
+++    ,
+++    true,                      /* true if this is a global object class */
+++    NULL                       /* Proxy extraction support callout */
+++#endif
+    );
+  
+    /*
+@@@ -271,6 -271,6 +276,17 @@@
+  
+    _API_extensions_Add( &_RTEMS_tasks_API_extensions );
+  
+++  /*
+++   *  Register the MP Process Packet routine.
+++   */
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++  _MPCI_Register_packet_processor(
+++    MP_PACKET_TASKS,
+++    _RTEMS_tasks_MP_Process_packet
+++  );
+++#endif
+++
+  }
+  
+  /*PAGE
+diff --cc epos/task/tasksetnote.c
+index ead470d,ead470d..a540dd5
+--- a/epos/task/tasksetnote.c
++++ b/epos/task/tasksetnote.c
+@@@ -90,6 -90,6 +90,18 @@@ epos_status_code epos_task_set_note
+        api->Notepads[ notepad ] = note;
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      return _RTEMS_tasks_MP_Send_request_packet(
+++        RTEMS_TASKS_MP_SET_NOTE_REQUEST,
+++        id,
+++        0,          /* Not used */
+++        notepad,
+++        note
+++      );
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/task/tasksetpriority.c
+index fc3bf23,fc3bf23..9ba4ec4
+--- a/epos/task/tasksetpriority.c
++++ b/epos/task/tasksetpriority.c
+@@@ -83,6 -83,6 +83,18 @@@ epos_status_code epos_task_set_priority
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      _Thread_Executing->Wait.return_argument = old_priority;
+++      return _RTEMS_tasks_MP_Send_request_packet(
+++          RTEMS_TASKS_MP_SET_PRIORITY_REQUEST,
+++          id,
+++          new_priority,
+++          0,          /* Not used */
+++          0           /* Not used */
+++      );
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/task/taskstart.c
+index fdafbcc,fdafbcc..cf6db63
+--- a/epos/task/taskstart.c
++++ b/epos/task/taskstart.c
+@@@ -75,6 -75,6 +75,12 @@@ epos_status_code epos_task_start
+        _Thread_Enable_dispatch();
+        return RTEMS_INCORRECT_STATE;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      _Thread_Dispatch();
+++      return RTEMS_ILLEGAL_ON_REMOTE_OBJECT;
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/task/tasksuspend.c
+index 56b0cef,56b0cef..8cab341
+--- a/epos/task/tasksuspend.c
++++ b/epos/task/tasksuspend.c
+@@@ -68,6 -68,6 +68,16 @@@ epos_status_code epos_task_suspend
+        _Thread_Enable_dispatch();
+        return RTEMS_ALREADY_SUSPENDED;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      return _RTEMS_tasks_MP_Send_request_packet(
+++        RTEMS_TASKS_MP_SUSPEND_REQUEST,
+++        id,
+++        0,          /* Not used */
+++        0,          /* Not used */
+++        0           /* Not used */
+++      );
+++#endif
+  
+      case OBJECTS_ERROR:
+        break;
+diff --cc epos/task/taskvariableadd.c
+index 5d98e76,5d98e76..dae4f35
+--- a/epos/task/taskvariableadd.c
++++ b/epos/task/taskvariableadd.c
+@@@ -74,6 -74,6 +74,12 @@@ epos_status_code epos_task_variable_add
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      _Thread_Dispatch();
+++      return RTEMS_ILLEGAL_ON_REMOTE_OBJECT;
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/task/taskvariabledelete.c
+index b7352d9,b7352d9..57c776a
+--- a/epos/task/taskvariabledelete.c
++++ b/epos/task/taskvariabledelete.c
+@@@ -62,6 -62,6 +62,12 @@@ epos_status_code epos_task_variable_del
+        _Thread_Enable_dispatch();
+        return RTEMS_INVALID_ADDRESS;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      _Thread_Dispatch();
+++      return RTEMS_ILLEGAL_ON_REMOTE_OBJECT;
+++#endif
+++
+      case OBJECTS_ERROR:
+          break;
+    }
+diff --cc epos/task/taskvariableget.c
+index 5d8095d,5d8095d..6c9b22d
+--- a/epos/task/taskvariableget.c
++++ b/epos/task/taskvariableget.c
+@@@ -65,6 -65,6 +65,12 @@@ epos_status_code epos_task_variable_get
+        _Thread_Enable_dispatch();
+        return RTEMS_INVALID_ADDRESS;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      _Thread_Dispatch();
+++      return RTEMS_ILLEGAL_ON_REMOTE_OBJECT;
+++#endif
+++
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/timer/rtemstimer.c
+index d3a2cc7,d3a2cc7..e938d3e
+--- a/epos/timer/rtemstimer.c
++++ b/epos/timer/rtemstimer.c
+@@@ -48,6 -48,6 +48,11 @@@ void _Timer_Manager_initialization(void
+      sizeof( Timer_Control ),   /* size of this object's control block */
+      false,                     /* true if the name is a string */
+      RTEMS_MAXIMUM_NAME_LENGTH  /* maximum length of an object name */
+++#if defined(RTEMS_MULTIPROCESSING)
+++    ,
+++    false,                     /* true if this is a global object class */
+++    NULL                       /* Proxy extraction support callout */
+++#endif
+    );
+  
+    /*
+diff --cc epos/timer/timercancel.c
+index 739f66c,739f66c..0cfa69a
+--- a/epos/timer/timercancel.c
++++ b/epos/timer/timercancel.c
+@@@ -55,6 -55,6 +55,9 @@@ epos_status_code epos_timer_cancel
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:            /* should never return this */
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/timer/timerdelete.c
+index 09a7568,09a7568..13edba1
+--- a/epos/timer/timerdelete.c
++++ b/epos/timer/timerdelete.c
+@@@ -55,6 -55,6 +55,10 @@@ epos_status_code epos_timer_delete
+        _Timer_Free( the_timer );
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:            /* should never return this */
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/timer/timerfireafter.c
+index cb5600c,cb5600c..412142c
+--- a/epos/timer/timerfireafter.c
++++ b/epos/timer/timerfireafter.c
+@@@ -91,6 -91,6 +91,10 @@@ epos_status_code epos_timer_fire_after
+        _Watchdog_Insert_ticks( &the_timer->Ticker, ticks );
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:            /* should never return this */
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/timer/timerfirewhen.c
+index 3ad356a,3ad356a..a51d4f8
+--- a/epos/timer/timerfirewhen.c
++++ b/epos/timer/timerfirewhen.c
+@@@ -80,6 -80,6 +80,9 @@@ epos_status_code epos_timer_fire_when
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:            /* should never return this */
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/timer/timergetinfo.c
+index 261ac84,261ac84..eedc85a
+--- a/epos/timer/timergetinfo.c
++++ b/epos/timer/timergetinfo.c
+@@@ -64,6 -64,6 +64,9 @@@ epos_status_code epos_timer_get_informa
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:            /* should never return this */
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/timer/timerreset.c
+index 2cd7927,2cd7927..c30e96e
+--- a/epos/timer/timerreset.c
++++ b/epos/timer/timerreset.c
+@@@ -81,6 -81,6 +81,10 @@@ epos_status_code epos_timer_reset
+        }
+        _Thread_Enable_dispatch();
+        return status;
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:            /* should never return this */
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/timer/timerserverfireafter.c
+index ac68d38,ac68d38..62aa54c
+--- a/epos/timer/timerserverfireafter.c
++++ b/epos/timer/timerserverfireafter.c
+@@@ -98,6 -98,6 +98,9 @@@ epos_status_code epos_timer_server_fire
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:            /* should never return this */
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc epos/timer/timerserverfirewhen.c
+index 5e338be,5e338be..a2b77fe
+--- a/epos/timer/timerserverfirewhen.c
++++ b/epos/timer/timerserverfirewhen.c
+@@@ -85,6 -85,6 +85,9 @@@ epos_status_code epos_timer_server_fire
+        _Thread_Enable_dispatch();
+        return RTEMS_SUCCESSFUL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:            /* should never return this */
+++#endif
+      case OBJECTS_ERROR:
+        break;
+    }
+diff --cc eposcore/apiext/apimutex.c
+index 06df641,06df641..c25c4b2
+--- a/eposcore/apiext/apimutex.c
++++ b/eposcore/apiext/apimutex.c
+@@@ -36,6 -36,6 +36,11 @@@ void _API_Mutex_Initialization
+      sizeof( API_Mutex_Control ), /* size of this object's control block */
+      false,                       /* true if the name is a string */
+      0                            /* maximum length of an object name */
+++#if defined(RTEMS_MULTIPROCESSING)
+++    ,
+++    true,                        /* true if this is a global object class */
+++    NULL                         /* Proxy extraction support callout */
+++#endif
+    );
+  }
+  
+diff --cc eposcore/corebarrier/corebarrierrelease.c
+index f5b0376,f5b0376..4e5548f
+--- a/eposcore/corebarrier/corebarrierrelease.c
++++ b/eposcore/corebarrier/corebarrierrelease.c
+@@@ -53,8 -53,8 +53,13 @@@
+  
+  uint32_t _CORE_barrier_Release(
+    CORE_barrier_Control                *the_barrier,
+++#if defined(RTEMS_MULTIPROCESSING)
+++  Objects_Id                           id,
+++  CORE_barrier_API_mp_support_callout  api_barrier_mp_support
+++#else
+    Objects_Id                           id ,
+    CORE_barrier_API_mp_support_callout  api_barrier_mp_support 
+++#endif
+  )
+  {
+    Thread_Control *the_thread;
+@@@ -62,6 -62,6 +67,10 @@@
+  
+    count = 0;
+    while ( (the_thread = _Thread_queue_Dequeue(&the_barrier->Wait_queue)) ) {
+++#if defined(RTEMS_MULTIPROCESSING)
+++    if ( !_Objects_Is_local_id( the_thread->Object.id ) )
+++      (*api_barrier_mp_support) ( the_thread, id );
+++#endif
+      count++;
+    }
+    the_barrier->number_of_waiting_threads = 0;
+diff --cc eposcore/coremsg/coremsgbroadcast.c
+index 2b377c6,2b377c6..c13a189
+--- a/eposcore/coremsg/coremsgbroadcast.c
++++ b/eposcore/coremsg/coremsgbroadcast.c
+@@@ -63,8 -63,8 +63,13 @@@ CORE_message_queue_Status _CORE_message
+    CORE_message_queue_Control                *the_message_queue,
+    const void                                *buffer,
+    size_t                                     size,
+++  #if defined(RTEMS_MULTIPROCESSING)
+++    Objects_Id                                 id,
+++    CORE_message_queue_API_mp_support_callout  api_message_queue_mp_support,
+++  #else
+      Objects_Id                                 id ,//__attribute__((unused)),
+      CORE_message_queue_API_mp_support_callout  api_message_queue_mp_support ,//__attribute__((unused)),
+++  #endif
+    uint32_t                                  *count
+  )
+  {
+@@@ -108,6 -108,6 +113,10 @@@
+  
+      *(size_t *) the_thread->Wait.return_argument = size;
+  
+++    #if defined(RTEMS_MULTIPROCESSING)
+++      if ( !_Objects_Is_local_id( the_thread->Object.id ) )
+++        (*api_message_queue_mp_support) ( the_thread, id );
+++    #endif
+  
+    }
+    *count = number_broadcasted;
+diff --cc eposcore/coremsg/coremsgsubmit.c
+index 1529288,1529288..e4d985d
+--- a/eposcore/coremsg/coremsgsubmit.c
++++ b/eposcore/coremsg/coremsgsubmit.c
+@@@ -67,7 -67,7 +67,11 @@@ CORE_message_queue_Status _CORE_message
+    const void                                *buffer,
+    size_t                                     size,
+    Objects_Id                                 id,
+--  CORE_message_queue_API_mp_support_callout  api_message_queue_mp_support  ,//__attribute__((unused)),
+++  #if defined(RTEMS_MULTIPROCESSING)
+++    CORE_message_queue_API_mp_support_callout  api_message_queue_mp_support,
+++  #else
+++    CORE_message_queue_API_mp_support_callout  api_message_queue_mp_support  ,//__attribute__((unused)),
+++  #endif
+    CORE_message_queue_Submit_types            submit_type,
+    bool                                       wait,
+    Watchdog_Interval                          timeout
+@@@ -94,6 -94,6 +98,10 @@@
+        *(size_t *) the_thread->Wait.return_argument = size;
+        the_thread->Wait.count = (uint32_t) submit_type;
+  
+++      #if defined(RTEMS_MULTIPROCESSING)
+++        if ( !_Objects_Is_local_id( the_thread->Object.id ) )
+++          (*api_message_queue_mp_support) ( the_thread, id );
+++      #endif
+        return CORE_MESSAGE_QUEUE_STATUS_SUCCESSFUL;
+      }
+    }
+diff --cc eposcore/coremutex/coremutexsurrender.c
+index 6d2d251,6d2d251..75f6f19
+--- a/eposcore/coremutex/coremutexsurrender.c
++++ b/eposcore/coremutex/coremutexsurrender.c
+@@@ -56,8 -56,8 +56,13 @@@
+  
+  CORE_mutex_Status _CORE_mutex_Surrender(
+    CORE_mutex_Control                *the_mutex,
+++#if defined(RTEMS_MULTIPROCESSING)
+++  Objects_Id                         id,
+++  CORE_mutex_API_mp_support_callout  api_mutex_mp_support
+++#else
+    Objects_Id                         id ,//__attribute__((unused)),
+    CORE_mutex_API_mp_support_callout  api_mutex_mp_support //__attribute__((unused))
+++#endif
+  )
+  {
+    Thread_Control *the_thread;
+@@@ -153,6 -153,6 +158,17 @@@
+     */
+    if ( ( the_thread = _Thread_queue_Dequeue( &the_mutex->Wait_queue ) ) ) {
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    if ( !_Objects_Is_local_id( the_thread->Object.id ) ) {
+++
+++      the_mutex->holder     = NULL;
+++      the_mutex->holder_id  = the_thread->Object.id;
+++      the_mutex->nest_count = 1;
+++
+++      ( *api_mutex_mp_support)( the_thread, id );
+++
+++    } else
+++#endif
+      {
+  
+        the_mutex->holder     = the_thread;
+diff --cc eposcore/corerwlock/corerwlocktimeout.c
+index 06092d9,06092d9..36b81a2
+--- a/eposcore/corerwlock/corerwlocktimeout.c
++++ b/eposcore/corerwlock/corerwlocktimeout.c
+@@@ -50,6 -50,6 +50,9 @@@ void _CORE_RWLock_Timeout
+    the_thread = _Thread_Get( id, &location );
+    switch ( location ) {
+      case OBJECTS_ERROR:
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:  /* impossible */
+++#endif
+        break;
+      case OBJECTS_LOCAL:
+        _Thread_queue_Process_timeout( the_thread );
+diff --cc eposcore/coresem/coresemsurrender.c
+index a374a97,a374a97..84eb15e
+--- a/eposcore/coresem/coresemsurrender.c
++++ b/eposcore/coresem/coresemsurrender.c
+@@@ -66,6 -66,6 +66,11 @@@ CORE_semaphore_Status _CORE_semaphore_S
+  
+    if ( (the_thread = _Thread_queue_Dequeue(&the_semaphore->Wait_queue)) ) {
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    if ( !_Objects_Is_local_id( the_thread->Object.id ) )
+++      (*api_semaphore_mp_support) ( the_thread, id );
+++#endif
+++
+    } else {
+      _ISR_Disable( level );
+        if ( the_semaphore->count < the_semaphore->Attributes.maximum_count )
+diff --cc eposcore/object/objectallocate.c
+index eb250e5,eb250e5..d15ca69
+--- a/eposcore/object/objectallocate.c
++++ b/eposcore/object/objectallocate.c
+@@@ -20,6 -20,6 +20,9 @@@
+  #include <rtems/score/address.h>
+  #include <rtems/score/chain.h>
+  #include <rtems/score/object.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/objectmp.h>
+++#endif
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+  #include <rtems/score/sysstate.h>
+diff --cc eposcore/object/objectallocatebyindex.c
+index a36577a,a36577a..157f7a1
+--- a/eposcore/object/objectallocatebyindex.c
++++ b/eposcore/object/objectallocatebyindex.c
+@@@ -20,6 -20,6 +20,9 @@@
+  #include <rtems/score/address.h>
+  #include <rtems/score/chain.h>
+  #include <rtems/score/object.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/objectmp.h>
+++#endif
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+  #include <rtems/score/sysstate.h>
+diff --cc eposcore/object/objectextendinformation.c
+index 54bba6e,54bba6e..98f820a
+--- a/eposcore/object/objectextendinformation.c
++++ b/eposcore/object/objectextendinformation.c
+@@@ -20,6 -20,6 +20,9 @@@
+  #include <rtems/score/address.h>
+  #include <rtems/score/chain.h>
+  #include <rtems/score/object.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/objectmp.h>
+++#endif
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+  #include <rtems/score/sysstate.h>
+diff --cc eposcore/object/objectfree.c
+index afa0186,afa0186..a72b5b2
+--- a/eposcore/object/objectfree.c
++++ b/eposcore/object/objectfree.c
+@@@ -20,6 -20,6 +20,9 @@@
+  #include <rtems/score/address.h>
+  #include <rtems/score/chain.h>
+  #include <rtems/score/object.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/objectmp.h>
+++#endif
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+  #include <rtems/score/sysstate.h>
+diff --cc eposcore/object/objectget.c
+index 9a8a7d0,9a8a7d0..399e7e3
+--- a/eposcore/object/objectget.c
++++ b/eposcore/object/objectget.c
+@@@ -20,6 -20,6 +20,9 @@@
+  #include <rtems/score/address.h>
+  #include <rtems/score/chain.h>
+  #include <rtems/score/object.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/objectmp.h>
+++#endif
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+  #include <rtems/score/sysstate.h>
+@@@ -89,8 -89,8 +92,18 @@@ Objects_Control *_Objects_Get
+      return NULL;
+    }
+  
+++  /*
+++   *  Object Id is not within this API and Class on this node.  So
+++   *  it may be global in a multiprocessing system.  But it is clearly
+++   *  invalid on a single processor system.
+++   */
+    *location = OBJECTS_ERROR;
+--  return NULL;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++  _Objects_MP_Is_remote( information, id, location, &the_object );
+++  return the_object;
+++#else
+++  return NULL;
+++#endif
+  }
+  
+diff --cc eposcore/object/objectgetbyindex.c
+index b7ef7e5,b7ef7e5..ef9c480
+--- a/eposcore/object/objectgetbyindex.c
++++ b/eposcore/object/objectgetbyindex.c
+@@@ -20,6 -20,6 +20,9 @@@
+  #include <rtems/score/address.h>
+  #include <rtems/score/chain.h>
+  #include <rtems/score/object.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/objectmp.h>
+++#endif
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+  #include <rtems/score/sysstate.h>
+diff --cc eposcore/object/objectgetinfo.c
+index e609266,e609266..f97cc4b
+--- a/eposcore/object/objectgetinfo.c
++++ b/eposcore/object/objectgetinfo.c
+@@@ -46,6 -46,6 +46,17 @@@ Objects_Information *_Objects_Get_infor
+    info = _Objects_Information_table[ the_api ][ the_class ];
+    if ( !info )
+      return NULL;
+++
+++  /*
+++   *  In a multprocessing configuration, we may access remote objects.
+++   *  Thus we may have 0 local instances and still have a valid object
+++   *  pointer.
+++   */
+++  #if !defined(RTEMS_MULTIPROCESSING)
+++    if ( info->maximum == 0 )
+++      return NULL;
+++  #endif
+++
+    return info;
+  }
+  
+diff --cc eposcore/object/objectgetisr.c
+index 0ee405f,0ee405f..1433b97
+--- a/eposcore/object/objectgetisr.c
++++ b/eposcore/object/objectgetisr.c
+@@@ -20,6 -20,6 +20,9 @@@
+  #include <rtems/score/address.h>
+  #include <rtems/score/chain.h>
+  #include <rtems/score/object.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/objectmp.h>
+++#endif
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+  #include <rtems/score/sysstate.h>
+@@@ -74,6 -74,6 +77,11 @@@ Objects_Control *_Objects_Get_isr_disab
+    _ISR_Enable( level );
+    *location = OBJECTS_ERROR;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++  _Objects_MP_Is_remote( information, id, location, &the_object );
+++  return the_object;
+++#else
+    return NULL;
+++#endif
+  }
+  
+diff --cc eposcore/object/objectgetnameasstring.c
+index 4f0db0e,4f0db0e..3bf82c3
+--- a/eposcore/object/objectgetnameasstring.c
++++ b/eposcore/object/objectgetnameasstring.c
+@@@ -56,6 -56,6 +56,10 @@@ char *_Objects_Get_name_as_string
+    the_object = _Objects_Get( information, tmpId, &location );
+    switch ( location ) {
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:
+++      /* not supported */
+++#endif
+      case OBJECTS_ERROR:
+        return NULL;
+  
+diff --cc eposcore/object/objectgetnext.c
+index 8151747,8151747..db953c6
+--- a/eposcore/object/objectgetnext.c
++++ b/eposcore/object/objectgetnext.c
+@@@ -20,6 -20,6 +20,9 @@@
+  #include <rtems/score/address.h>
+  #include <rtems/score/chain.h>
+  #include <rtems/score/object.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/objectmp.h>
+++#endif
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+  #include <rtems/score/sysstate.h>
+diff --cc eposcore/object/objectgetnoprotection.c
+index 7fbd2c3,7fbd2c3..c3b17dd
+--- a/eposcore/object/objectgetnoprotection.c
++++ b/eposcore/object/objectgetnoprotection.c
+@@@ -20,6 -20,6 +20,9 @@@
+  #include <rtems/score/address.h>
+  #include <rtems/score/chain.h>
+  #include <rtems/score/object.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/objectmp.h>
+++#endif
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+  #include <rtems/score/sysstate.h>
+diff --cc eposcore/object/objectinitializeinformation.c
+index 486cc9f,486cc9f..18516fd
+--- a/eposcore/object/objectinitializeinformation.c
++++ b/eposcore/object/objectinitializeinformation.c
+@@@ -19,6 -19,6 +19,9 @@@
+  #include <rtems/score/address.h>
+  #include <rtems/score/chain.h>
+  #include <rtems/score/object.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/objectmp.h>
+++#endif
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+  #include <rtems/score/sysstate.h>
+@@@ -36,6 -36,6 +39,10 @@@
+   *    size                - size of this object's control block
+   *    is_string           - true if names for this object are strings
+   *    maximum_name_length - maximum length of each object's name
+++ *    When multiprocessing is configured,
+++ *      supports_global     - true if this is a global object class
+++ *      extract_callout     - pointer to threadq extract callout
+++ *
+   *  Output parameters:  NONE
+   */
+  
+@@@ -47,12 -47,12 +54,20 @@@ void _Objects_Initialize_information
+    uint16_t             size,
+    bool                 is_string,
+    uint32_t             maximum_name_length
+++#if defined(RTEMS_MULTIPROCESSING)
+++  ,
+++  bool                 supports_global,
+++  Objects_Thread_queue_Extract_callout extract
+++#endif
+  )
+  {
+    static Objects_Control *null_local_table = NULL;
+    uint32_t                minimum_index;
+    uint32_t                name_length;
+    uint32_t                maximum_per_allocation;
+++  #if defined(RTEMS_MULTIPROCESSING)
+++    uint32_t              index;
+++  #endif
+  
+    information->the_api            = the_api;
+    information->the_class          = the_class;
+@@@ -135,5 -135,5 +150,25 @@@
+       */
+      _Objects_Extend_information( information );
+    }
+++
+++  /*
+++   *  Take care of multiprocessing
+++   */
+++  #if defined(RTEMS_MULTIPROCESSING)
+++    information->extract = extract;
+++
+++    if ( (supports_global == true) && _System_state_Is_multiprocessing ) {
+++
+++      information->global_table =
+++	(Chain_Control *) _Workspace_Allocate_or_fatal_error(
+++	  (_Objects_Maximum_nodes + 1) * sizeof(Chain_Control)
+++	);
+++
+++      for ( index=1; index <= _Objects_Maximum_nodes ; index++ )
+++	_Chain_Initialize_empty( &information->global_table[ index ] );
+++     }
+++     else
+++       information->global_table = NULL;
+++  #endif
+  }
+  
+diff --cc eposcore/object/objectnametoid.c
+index 730c10c,730c10c..119a913
+--- a/eposcore/object/objectnametoid.c
++++ b/eposcore/object/objectnametoid.c
+@@@ -19,6 -19,6 +19,9 @@@
+  #include <rtems/score/address.h>
+  #include <rtems/score/chain.h>
+  #include <rtems/score/object.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/objectmp.h>
+++#endif
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+  #include <rtems/score/sysstate.h>
+@@@ -54,7 -54,7 +57,9 @@@ Objects_Name_or_id_lookup_errors _Objec
+    Objects_Control           *the_object;
+    uint32_t                   index;
+    uint32_t                   name_length;
+--
+++#if defined(RTEMS_MULTIPROCESSING)
+++  Objects_Name               name_for_mp;
+++#endif
+  
+    /* ASSERT: information->is_string == false */
+  
+@@@ -89,7 -89,7 +94,14 @@@
+      }
+    }
+  
+--  return OBJECTS_INVALID_NAME;
+++#if defined(RTEMS_MULTIPROCESSING)
+++  if ( _Objects_Is_local_node( node ) || node == OBJECTS_SEARCH_LOCAL_NODE )
+++    return OBJECTS_INVALID_NAME;
+  
+++  name_for_mp.name_u32 = name;
+++  return _Objects_MP_Global_name_search( information, name_for_mp, node, id );
+++#else
+++  return OBJECTS_INVALID_NAME;
+++#endif
+  }
+  
+diff --cc eposcore/object/objectnametoidstring.c
+index 5f6ea30,5f6ea30..a33d607
+--- a/eposcore/object/objectnametoidstring.c
++++ b/eposcore/object/objectnametoidstring.c
+@@@ -21,6 -21,6 +21,9 @@@
+  #include <rtems/score/address.h>
+  #include <rtems/score/chain.h>
+  #include <rtems/score/object.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/objectmp.h>
+++#endif
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+  #include <rtems/score/sysstate.h>
+diff --cc eposcore/object/objectshrinkinformation.c
+index 848a545,848a545..a81b1f9
+--- a/eposcore/object/objectshrinkinformation.c
++++ b/eposcore/object/objectshrinkinformation.c
+@@@ -20,6 -20,6 +20,9 @@@
+  #include <rtems/score/address.h>
+  #include <rtems/score/chain.h>
+  #include <rtems/score/object.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/objectmp.h>
+++#endif
+  #include <rtems/score/thread.h>
+  #include <rtems/score/wkspace.h>
+  #include <rtems/score/sysstate.h>
+diff --cc eposcore/thread/thread.c
+index 6541e13,6541e13..d1fcf04
+--- a/eposcore/thread/thread.c
++++ b/eposcore/thread/thread.c
+@@@ -55,10 -55,10 +55,15 @@@ void _Thread_Handler_initialization(voi
+    uint32_t     index;
+    uint32_t     ticks_per_timeslice;
+    uint32_t     maximum_extensions;
+++  #if defined(RTEMS_MULTIPROCESSING)
+++    uint32_t   maximum_proxies;
+++  #endif
+  
+    ticks_per_timeslice = Configuration.ticks_per_timeslice;
+    maximum_extensions  = Configuration.maximum_extensions;
+--
+++  #if defined(RTEMS_MULTIPROCESSING)
+++    maximum_proxies   =  _Configuration_MP_table->maximum_proxies;
+++  #endif
+    /*
+     * BOTH stacks hooks must be set or both must be NULL.
+     * Do not allow mixture.
+@@@ -91,6 -91,6 +96,9 @@@
+    for ( index=0; index <= PRIORITY_MAXIMUM ; index++ )
+      _Chain_Initialize_empty( &_Thread_Ready_chain[ index ] );
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++  _Thread_MP_Handler_initialization( maximum_proxies );
+++#endif
+  
+    /*
+     *  Initialize this class of objects.
+@@@ -100,11 -100,11 +108,20 @@@
+      &_Thread_Internal_information,
+      OBJECTS_INTERNAL_API,
+      OBJECTS_INTERNAL_THREADS,
+++#if defined(RTEMS_MULTIPROCESSING)
+++    ( _System_state_Is_multiprocessing ) ?  2 : 1,
+++#else
+      1,
+++#endif
+      sizeof( Thread_Control ),
+                                  /* size of this object's control block */
+      false,                      /* true if names for this object are strings */
+      8                           /* maximum length of each object's name */
+++#if defined(RTEMS_MULTIPROCESSING)
+++    ,
+++    false,                      /* true if this is a global object class */
+++    NULL                        /* Proxy extraction support callout */
+++#endif
+    );
+  }
+  
+diff --cc eposcore/thread/threadblockingoperationcancel.c
+index def0da0,def0da0..1ef53b6
+--- a/eposcore/thread/threadblockingoperationcancel.c
++++ b/eposcore/thread/threadblockingoperationcancel.c
+@@@ -89,5 -89,5 +89,10 @@@ void _Thread_blocking_operation_Cancel
+  
+    _Thread_Unblock( the_thread );
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++  if ( !_Objects_Is_local_id( the_thread->Object.id ) )
+++    _Thread_MP_Free_proxy( the_thread );
+++#endif
+++
+  }
+  
+diff --cc eposcore/thread/threaddelayended.c
+index 04c5a5e,04c5a5e..59f4c4c
+--- a/eposcore/thread/threaddelayended.c
++++ b/eposcore/thread/threaddelayended.c
+@@@ -62,6 -62,6 +62,9 @@@ void _Thread_Delay_ended
+    the_thread = _Thread_Get( id, &location );
+    switch ( location ) {
+      case OBJECTS_ERROR:
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:  /* impossible */
+++#endif
+        break;
+      case OBJECTS_LOCAL:
+        _Thread_Clear_state(
+diff --cc eposcore/thread/threadinitialize.c
+index 02458ed,02458ed..5fbec84
+--- a/eposcore/thread/threadinitialize.c
++++ b/eposcore/thread/threadinitialize.c
+@@@ -70,6 -70,6 +70,12 @@@ bool _Thread_Initialize
+    bool                 extension_status;
+    int                  i;
+  
+++  /*
+++   *  Initialize the Ada self pointer
+++   */
+++  #if __RTEMS_ADA__
+++    the_thread->epos_ada_self = NULL;
+++  #endif
+  
+    /*
+     *  Zero out all the allocated memory fields
+diff --cc eposcore/threadq/threadqdequeuefifo.c
+index 5e67408,5e67408..d6b4bf8
+--- a/eposcore/threadq/threadqdequeuefifo.c
++++ b/eposcore/threadq/threadqdequeuefifo.c
+@@@ -74,6 -74,6 +74,11 @@@ Thread_Control *_Thread_queue_Dequeue_f
+        _Thread_Unblock( the_thread );
+      }
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++    if ( !_Objects_Is_local_id( the_thread->Object.id ) )
+++      _Thread_MP_Free_proxy( the_thread );
+++#endif
+++
+      return the_thread;
+    }
+  
+diff --cc eposcore/threadq/threadqdequeuepriority.c
+index 482ca18,482ca18..0794e50
+--- a/eposcore/threadq/threadqdequeuepriority.c
++++ b/eposcore/threadq/threadqdequeuepriority.c
+@@@ -121,6 -121,6 +121,11 @@@ dequeue
+      (void) _Watchdog_Remove( &the_thread->Timer );
+      _Thread_Unblock( the_thread );
+    }
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++  if ( !_Objects_Is_local_id( the_thread->Object.id ) )
+++    _Thread_MP_Free_proxy( the_thread );
+++#endif
+    return( the_thread );
+  }
+  
+diff --cc eposcore/threadq/threadqenqueue.c
+index fe23540,fe23540..e1d9e1f
+--- a/eposcore/threadq/threadqenqueue.c
++++ b/eposcore/threadq/threadqenqueue.c
+@@@ -67,6 -67,6 +67,11 @@@ void _Thread_queue_Enqueue_with_handler
+  
+    the_thread = _Thread_Executing;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++  if ( _Thread_MP_Is_receive( the_thread ) && the_thread->receive_packet )
+++    the_thread = _Thread_MP_Allocate_proxy( the_thread_queue->state );
+++  else
+++#endif
+    /*
+     *  Set the blocking state for this thread queue in the thread.
+     */
+diff --cc eposcore/threadq/threadqextractfifo.c
+index f8eaf7d,f8eaf7d..4958a74
+--- a/eposcore/threadq/threadqextractfifo.c
++++ b/eposcore/threadq/threadqextractfifo.c
+@@@ -77,5 -77,5 +77,10 @@@ void _Thread_queue_Extract_fifo
+    }
+  
+    _Thread_Unblock( the_thread );
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++  if ( !_Objects_Is_local_id( the_thread->Object.id ) )
+++    _Thread_MP_Free_proxy( the_thread );
+++#endif
+  }
+  
+diff --cc eposcore/threadq/threadqextractpriority.c
+index 55e5b86,55e5b86..a77ee2c
+--- a/eposcore/threadq/threadqextractpriority.c
++++ b/eposcore/threadq/threadqextractpriority.c
+@@@ -123,5 -123,5 +123,9 @@@ void _Thread_queue_Extract_priority_hel
+    }
+    _Thread_Unblock( the_thread );
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++  if ( !_Objects_Is_local_id( the_thread->Object.id ) )
+++    _Thread_MP_Free_proxy( the_thread );
+++#endif
+  }
+  
+diff --cc eposcore/threadq/threadqextractwithproxy.c
+index 20378c9,20378c9..cfca903
+--- a/eposcore/threadq/threadqextractwithproxy.c
++++ b/eposcore/threadq/threadqextractwithproxy.c
+@@@ -53,6 -53,6 +53,20 @@@ bool _Thread_queue_Extract_with_proxy
+    state = the_thread->current_state;
+  
+    if ( _States_Is_waiting_on_thread_queue( state ) ) {
+++    #if defined(RTEMS_MULTIPROCESSING)
+++      if ( _States_Is_waiting_for_rpc_reply( state ) &&
+++           _States_Is_locally_blocked( state ) ) {
+++        Objects_Information                  *the_information;
+++        Objects_Thread_queue_Extract_callout  proxy_extract_callout;
+++
+++        the_information = _Objects_Get_information_id( the_thread->Wait.id );
+++        proxy_extract_callout =
+++          (Objects_Thread_queue_Extract_callout) the_information->extract;
+++
+++        if ( proxy_extract_callout )
+++          (*proxy_extract_callout)( the_thread );
+++      }
+++    #endif
+      _Thread_queue_Extract( the_thread->Wait.queue, the_thread );
+  
+      return true;
+diff --cc eposcore/threadq/threadqflush.c
+index 1adc319,1adc319..a7a5ab1
+--- a/eposcore/threadq/threadqflush.c
++++ b/eposcore/threadq/threadqflush.c
+@@@ -49,12 -49,12 +49,22 @@@
+  
+  void _Thread_queue_Flush(
+    Thread_queue_Control       *the_thread_queue,
+++#if defined(RTEMS_MULTIPROCESSING)
+++  Thread_queue_Flush_callout  remote_extract_callout,
+++#else
+    Thread_queue_Flush_callout  remote_extract_callout ,//__attribute__((unused)),
+++#endif
+    uint32_t                    status
+  )
+  {
+    Thread_Control *the_thread;
+++
+    while ( (the_thread = _Thread_queue_Dequeue( the_thread_queue )) ) {
+++#if defined(RTEMS_MULTIPROCESSING)
+++    if ( !_Objects_Is_local_id( the_thread->Object.id ) )
+++      ( *remote_extract_callout )( the_thread );
+++    else
+++#endif
+        the_thread->Wait.return_code = status;
+    }
+  }
+diff --cc eposcore/threadq/threadqtimeout.c
+index 2585249,2585249..2669689
+--- a/eposcore/threadq/threadqtimeout.c
++++ b/eposcore/threadq/threadqtimeout.c
+@@@ -56,6 -56,6 +56,9 @@@ void _Thread_queue_Timeout
+    the_thread = _Thread_Get( id, &location );
+    switch ( location ) {
+      case OBJECTS_ERROR:
+++#if defined(RTEMS_MULTIPROCESSING)
+++    case OBJECTS_REMOTE:  /* impossible */
+++#endif
+        break;
+      case OBJECTS_LOCAL:
+        _Thread_queue_Process_timeout( the_thread );
+diff --cc eposcore/wkspace/wkspace.c
+index 3440b5b,3440b5b..5cbf1a4
+--- a/eposcore/wkspace/wkspace.c
++++ b/eposcore/wkspace/wkspace.c
+@@@ -46,21 -46,21 +46,7 @@@ void _Workspace_Handler_initialization(
+      CPU_HEAP_ALIGNMENT
+    ); 
+  
+--  uintptr_t memory_available_B = 0;
+--  void *starting_address_B = Configuration.work_space_B_start;
+--  uintptr_t size_B = Configuration.work_space_B_size;
+--
+--  if ( Configuration.do_zero_of_workspace )
+--   memset( starting_address_B, 0, size_B );
+--  
+--  memory_available_B = _Heap_Initialize(
+--    &_Workspace_Area_B,
+--    starting_address_B,
+--    size_B,
+--    CPU_HEAP_ALIGNMENT
+--  ); 
+--
+--  if ( memory_available == 0 || memory_available_B == 0)
+++  if ( memory_available == 0 )
+      _Internal_error_Occurred(
+        INTERNAL_ERROR_CORE,
+        true,
+diff --cc include/rtems.h
+index 1b4a4a5,1b4a4a5..61f314d
+--- a/include/rtems.h
++++ b/include/rtems.h
+@@@ -54,6 -54,6 +54,9 @@@ extern "C" 
+  #include <rtems/io.h>
+  #include <rtems/fatal.h>
+  #include <rtems/rtems/ratemon.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/rtems/mp.h>
+++#endif
+  
+  #include <rtems/rtems/support.h>
+  #include <rtems/score/sysstate.h>
+diff --cc include/rtems/confdefs.h
+index 8f44849,8f44849..ac9a010
+--- a/include/rtems/confdefs.h
++++ b/include/rtems/confdefs.h
+@@@ -52,6 -52,6 +52,9 @@@ extern "C" 
+  extern epos_initialization_tasks_table Initialization_tasks[];
+  extern epos_driver_address_table       Device_drivers[];
+  extern epos_configuration_table        Configuration;
+++#if defined(RTEMS_MULTIPROCESSING)
+++  extern epos_multiprocessing_table      Multiprocessing_configuration;
+++#endif
+  #ifdef RTEMS_POSIX_API
+    extern posix_api_configuration_table    Configuration_POSIX_API;
+  #endif
+@@@ -839,6 -839,6 +842,68 @@@ const  int epos_filesystem_mount_table_
+  #endif
+  
+    #define CONFIGURE_LIBBLOCK_SEMAPHORES 0
+++#if defined(RTEMS_MULTIPROCESSING)
+++  /*
+++   *  Default Multiprocessing Configuration Table.  The defaults are
+++   *  appropriate for most of the RTEMS Multiprocessor Test Suite.  Each
+++   *  value may be overridden within each test to customize the environment.
+++   */
+++
+++  #ifdef CONFIGURE_MP_APPLICATION
+++    #define CONFIGURE_TIMER_FOR_SHARED_MEMORY_DRIVER 1
+++
+++    #ifndef CONFIGURE_HAS_OWN_MULTIPROCESSING_TABLE
+++
+++      #ifndef CONFIGURE_MP_NODE_NUMBER
+++        #define CONFIGURE_MP_NODE_NUMBER                NODE_NUMBER
+++      #endif
+++
+++      #ifndef CONFIGURE_MP_MAXIMUM_NODES
+++        #define CONFIGURE_MP_MAXIMUM_NODES              2
+++      #endif
+++
+++      #ifndef CONFIGURE_MP_MAXIMUM_GLOBAL_OBJECTS
+++        #define CONFIGURE_MP_MAXIMUM_GLOBAL_OBJECTS     32
+++      #endif
+++      #define CONFIGURE_MEMORY_FOR_GLOBAL_OBJECTS(_global_objects) \
+++        _Configure_Object_RAM((_global_objects), sizeof(Objects_MP_Control))
+++
+++      #ifndef CONFIGURE_MP_MAXIMUM_PROXIES
+++        #define CONFIGURE_MP_MAXIMUM_PROXIES            32
+++      #endif
+++      #define CONFIGURE_MEMORY_FOR_PROXIES(_proxies) \
+++        _Configure_Object_RAM((_proxies) + 1, sizeof(Thread_Proxy_control) )
+++
+++      #ifndef CONFIGURE_EXTRA_MPCI_RECEIVE_SERVER_STACK
+++        #define CONFIGURE_EXTRA_MPCI_RECEIVE_SERVER_STACK 0
+++      #endif
+++
+++      #ifndef CONFIGURE_MP_MPCI_TABLE_POINTER
+++        #include <rtems/mpci.h>
+++        #define CONFIGURE_MP_MPCI_TABLE_POINTER         &MPCI_table
+++      #endif
+++
+++      #ifdef CONFIGURE_INIT
+++        epos_multiprocessing_table Multiprocessing_configuration = {
+++          CONFIGURE_MP_NODE_NUMBER,               /* local node number */
+++          CONFIGURE_MP_MAXIMUM_NODES,             /* maximum # nodes */
+++          CONFIGURE_MP_MAXIMUM_GLOBAL_OBJECTS,    /* maximum # global objects */
+++          CONFIGURE_MP_MAXIMUM_PROXIES,           /* maximum # proxies */
+++          CONFIGURE_EXTRA_MPCI_RECEIVE_SERVER_STACK, /* MPCI stack > minimum */
+++          CONFIGURE_MP_MPCI_TABLE_POINTER         /* ptr to MPCI config table */
+++        };
+++      #endif
+++
+++      #define CONFIGURE_MULTIPROCESSING_TABLE    &Multiprocessing_configuration
+++
+++    #endif /* CONFIGURE_HAS_OWN_MULTIPROCESSING_TABLE */
+++
+++  #else
+++
+++    #define CONFIGURE_MULTIPROCESSING_TABLE    NULL
+++
+++  #endif /* CONFIGURE_MP_APPLICATION */
+++#endif /* RTEMS_MULTIPROCESSING */
+  
+  #ifndef CONFIGURE_TIMER_FOR_SHARED_MEMORY_DRIVER
+    #define CONFIGURE_TIMER_FOR_SHARED_MEMORY_DRIVER 0
+@@@ -1228,6 -1228,6 +1293,48 @@@
+    #define CONFIGURE_POSIX_INIT_THREAD_STACK_SIZE    0
+  #endif
+  
+++/*ADA
+++ *  This block of defines are for applications which use GNAT/RTEMS.
+++ *  GNAT implements each Ada task as a POSIX thread.
+++
+++#ifdef CONFIGURE_GNAT_RTEMS
+++
+++
+++   *  The GNAT run-time needs something less than (10) POSIX mutexes.
+++   *  We may be able to get by with less but why bother.
+++
+++  #define CONFIGURE_GNAT_MUTEXES 10
+++
+++
+++   *  This is the maximum number of Ada tasks which can be concurrently
+++   *  in existence.  Twenty (20) are required to run all tests in the
+++   *  ACATS (formerly ACVC).
+++
+++  #ifndef CONFIGURE_MAXIMUM_ADA_TASKS
+++    #define CONFIGURE_MAXIMUM_ADA_TASKS  20
+++  #endif
+++
+++
+++   * This is the number of non-Ada tasks which invoked Ada code.
+++
+++  #ifndef CONFIGURE_MAXIMUM_FAKE_ADA_TASKS
+++    #define CONFIGURE_MAXIMUM_FAKE_ADA_TASKS 0
+++  #endif
+++
+++
+++   * Ada tasks are allocated twice the minimum stack space.
+++
+++  #define CONFIGURE_ADA_TASKS_STACK \
+++    (CONFIGURE_MAXIMUM_ADA_TASKS * \
+++      (CONFIGURE_MINIMUM_TASK_STACK_SIZE + (6 * 1024)))
+++
+++#else
+++  #define CONFIGURE_GNAT_MUTEXES           0
+++  #define CONFIGURE_MAXIMUM_ADA_TASKS      0
+++  #define CONFIGURE_MAXIMUM_FAKE_ADA_TASKS 0
+++  #define CONFIGURE_ADA_TASKS_STACK        0
+++#endif
+++*/
+  /**
+   *  This macro specifies the amount of memory to be reserved for the
+   *  Newlib C Library reentrancy structure -- if we are using newlib.
+@@@ -1269,8 -1269,8 +1376,21 @@@
+            (CONFIGURE_MAXIMUM_USER_EXTENSIONS + 1) * sizeof(void *)) \
+   )
+  
+--
+--
+++/**
+++ *  This defines the amount of memory configured for the multiprocessing
+++ *  support required by this application.
+++ */
+++#ifdef CONFIGURE_MP_APPLICATION
+++  #define CONFIGURE_MEMORY_FOR_MP \
+++    (CONFIGURE_MEMORY_FOR_PROXIES(CONFIGURE_MP_MAXIMUM_PROXIES) + \
+++     CONFIGURE_MEMORY_FOR_GLOBAL_OBJECTS( \
+++             CONFIGURE_MP_MAXIMUM_GLOBAL_OBJECTS) + \
+++     CONFIGURE_MEMORY_FOR_TASKS(1, 1) + \
+++     CONFIGURE_EXTRA_MPCI_RECEIVE_SERVER_STACK \
+++  )
+++#else
+++  #define CONFIGURE_MEMORY_FOR_MP  0
+++#endif
+  
+  /**
+   *  This is so we can account for tasks with stacks greater than minimum
+@@@ -1412,7 -1412,7 +1532,12 @@@
+   *  This macro provides a summation of the various task and thread
+   *  requirements.
+   */
+--
+++ /*ADA
+++#define CONFIGURE_TOTAL_TASKS_AND_THREADS \
+++   (CONFIGURE_MAXIMUM_TASKS + \
+++    CONFIGURE_MAXIMUM_POSIX_THREADS + CONFIGURE_MAXIMUM_ADA_TASKS \
+++   )
+++   */
+     #define CONFIGURE_TOTAL_TASKS_AND_THREADS \
+     (CONFIGURE_MAXIMUM_TASKS + \
+      CONFIGURE_MAXIMUM_POSIX_THREADS \
+@@@ -1561,6 -1561,6 +1686,7 @@@
+     (CONFIGURE_MAXIMUM_POSIX_THREADS * CONFIGURE_MINIMUM_TASK_STACK_SIZE ) + \
+     CONFIGURE_INITIALIZATION_THREADS_STACKS + \
+     CONFIGURE_MEMORY_FOR_STATIC_EXTENSIONS + \
+++   CONFIGURE_MEMORY_FOR_MP + \
+     CONFIGURE_MESSAGE_BUFFER_MEMORY + \
+     (CONFIGURE_MEMORY_OVERHEAD * 1024) + \
+     (CONFIGURE_EXTRA_TASK_STACKS) + (CONFIGURE_ADA_TASKS_STACK) \
+@@@ -1633,8 -1633,8 +1759,6 @@@
+    epos_configuration_table Configuration = {
+      NULL,                                     /* filled in by BSP */
+      40000,//CONFIGURE_EXECUTIVE_RAM_SIZE,             /* required RTEMS workspace */
+--    NULL,   
+--    40000,
+      CONFIGURE_MAXIMUM_USER_EXTENSIONS,        /* maximum dynamic extensions */
+      CONFIGURE_MICROSECONDS_PER_TICK,          /* microseconds per clock tick */
+      CONFIGURE_TICKS_PER_TIMESLICE,            /* ticks per timeslice quantum */
+@@@ -1649,7 -1649,7 +1773,9 @@@
+      Device_drivers,                           /* pointer to driver table */
+      CONFIGURE_NUMBER_OF_INITIAL_EXTENSIONS,   /* number of static extensions */
+      CONFIGURE_INITIAL_EXTENSION_TABLE,        /* pointer to static extensions */
+--
+++    #if defined(RTEMS_MULTIPROCESSING)
+++      CONFIGURE_MULTIPROCESSING_TABLE,        /* pointer to MP config table */
+++    #endif
+    };
+  #endif
+  
+@@@ -1727,6 -1727,6 +1853,14 @@@
+  #error "CONFIGURATION ERROR: No initialization tasks or threads configured!!"
+  #endif
+  
+++/*
+++ *  If the user is trying to configure a multiprocessing application and
+++ *  RTEMS was not configured and built multiprocessing, then error out.
+++ */
+++#if defined(CONFIGURE_MP_APPLICATION) && \
+++    !defined(RTEMS_MULTIPROCESSING)
+++#error "CONFIGURATION ERROR: RTEMS not configured for multiprocessing!!"
+++#endif
+  
+  /*
+   *  If an attempt was made to configure POSIX objects and
+diff --cc include/rtems/config.h
+index caa3a01,caa3a01..0c74eec
+--- a/include/rtems/config.h
++++ b/include/rtems/config.h
+@@@ -39,7 -39,7 +39,7 @@@ extern "C" 
+  
+  /*
+   *  This is kind of kludgy but it allows targets to totally ignore the
+-- *  optional APIs like POSIX and ITRON safely.
+++ *  optional APIs like POSIX  safely.
+   */
+  
+  #ifdef RTEMS_POSIX_API
+@@@ -52,6 -52,6 +52,37 @@@ typedef void *posix_api_configuration_t
+  
+  #include <rtems/extension.h>
+  #include <rtems/io.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++/*
+++ *  The following records define the Multiprocessor Configuration
+++ *  Table.  This table defines the multiprocessor system
+++ *  characteristics which must be known by RTEMS in a multiprocessor
+++ *  system.
+++ */
+++typedef struct {
+++  /** This is the local node number. */
+++  uint32_t            node;
+++  /** This is the maximum number of nodes in system. */
+++  uint32_t            maximum_nodes;
+++  /** This is the maximum number of global objects. */
+++  uint32_t            maximum_global_objects;
+++  /** This is the maximum number of proxies. */
+++  uint32_t            maximum_proxies;
+++
+++  /** The MPCI Receive server is assumed to have a stack of at least
+++   *  minimum stack size.  This field specifies the amount of extra
+++   *  stack this task will be given in bytes.
+++   */
+++  uint32_t            extra_mpci_receive_server_stack;
+++
+++  /** This is a pointer to User/BSP provided MPCI Table. */
+++  epos_mpci_table   *User_mpci_table;
+++} epos_multiprocessing_table;
+++#endif
+  
+  /*
+   *  The following records define the Configuration Table.  The
+@@@ -73,10 -73,10 +104,6 @@@ typedef struct 
+     */
+    uintptr_t                      work_space_size;
+  
+--  void                          *work_space_B_start;    //将另一个worspace分配在可以和原来workspce同时访问的内存空间上。
+--  uintptr_t                      work_space_B_size;    //另一个workspace的大小
+--
+--
+    /** This field specifies the maximum number of dynamically installed
+     *  used extensions.
+     */
+@@@ -130,6 -130,6 +157,9 @@@
+    epos_driver_address_table    *Device_driver_table;
+    uint32_t                       number_of_initial_extensions;
+    epos_extensions_table        *User_extension_table;
+++  #if defined(RTEMS_MULTIPROCESSING)
+++    epos_multiprocessing_table   *User_multiprocessing_table;
+++  #endif
+  } epos_configuration_table;
+  
+  /**
+@@@ -137,6 -137,6 +167,23 @@@
+   */
+  extern epos_configuration_table  Configuration;
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++  /**
+++   *   This points to the multiprocessing configuration table.
+++   */
+++  SAPI_EXTERN epos_multiprocessing_table  *_Configuration_MP_table;
+++#endif
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++  /**
+++   *  @brief RTEMS Multiprocessing Configuration Table
+++   *
+++   *  This is the RTEMS Multiprocessing Configuration Table expected to
+++   *  be generated by confdefs.h.
+++   */
+++  extern epos_multiprocessing_table  Multiprocessing_configuration;
+++#endif
+++
+  
+  /*
+   *  Some handy macros to avoid dependencies on either the BSP
+@@@ -205,7 -205,7 +252,12 @@@ extern epos_configuration_table    Conf
+  #define epos_configuration_get_user_extension_table() \
+          (Configuration.User_extension_table)
+  
+--#define epos_configuration_get_user_multiprocessing_table() NULL
+++#if defined(RTEMS_MULTIPROCESSING)
+++  #define epos_configuration_get_user_multiprocessing_table() \
+++	  (Configuration.User_multiprocessing_table)
+++#else
+++  #define epos_configuration_get_user_multiprocessing_table() NULL
+++#endif
+  
+  #define epos_configuration_get_epos_api_configuration() \
+          (&Configuration_RTEMS_API)
+diff --cc include/rtems/init.h
+index 59b4ffe,59b4ffe..6502a5d
+--- a/include/rtems/init.h
++++ b/include/rtems/init.h
+@@@ -36,6 -36,6 +36,14 @@@ extern "C" 
+  #include <rtems/rtems/types.h>
+  #include <rtems/rtems/intr.h>
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++/**
+++ *  The following defines the default Multiprocessing Configuration
+++ *  Table.  This table is used in a single processor system.
+++ */
+++extern const epos_multiprocessing_table
+++  _Initialization_Default_multiprocessing_table;
+++#endif
+  
+  /**
+   *  @brief epos_initialize_data_structures
+diff --cc include/rtems/rtems/attr.h
+index cff69c5,cff69c5..8417aac
+--- a/include/rtems/rtems/attr.h
++++ b/include/rtems/rtems/attr.h
+@@@ -200,6 -200,6 +200,10 @@@ typedef uint32_t   epos_attribute
+  	
+  	RTEMS_INLINE_ROUTINE bool _Attributes_Is_floating_point(epos_attribute attribute_set);
+  
+++	#if defined(RTEMS_MULTIPROCESSING)
+++		RTEMS_INLINE_ROUTINE bool _Attributes_Is_global(epos_attribute attribute_set);
+++	#endif
+++
+  	RTEMS_INLINE_ROUTINE bool _Attributes_Is_priority(epos_attribute attribute_set);
+  
+  	RTEMS_INLINE_ROUTINE bool _Attributes_Is_priority(epos_attribute attribute_set);
+diff --cc include/rtems/rtems/event.h
+index bf6a20a,bf6a20a..9755daa
+--- a/include/rtems/rtems/event.h
++++ b/include/rtems/rtems/event.h
+@@@ -152,6 -152,6 +152,10 @@@ void _Event_Timeout 
+   *  @brief he following defines the synchronization flag used by the
+   */
+  RTEMS_EVENT_EXTERN volatile Thread_blocking_operation_States _Event_Sync_state;
+++
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/rtems/eventmp.h>
+++#endif
+  #ifndef __RTEMS_APPLICATION__
+  #ifndef _OCC_NO_INLINE_
+  #include <rtems/rtems/event.inl>
+diff --cc include/rtems/rtems/message.h
+index e96ea59,e96ea59..42844d0
+--- a/include/rtems/rtems/message.h
++++ b/include/rtems/rtems/message.h
+@@@ -284,6 -284,6 +284,22 @@@ epos_status_code _Message_queue_Transla
+    uint32_t   the_message_queue_status
+  );
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++/**
+++ *  @brief Message_queue_Core_message_queue_mp_support
+++ *
+++ *  Input parameters:
+++ *    the_thread - the remote thread the message was submitted to
+++ *    id         - id of the message queue
+++ *
+++ *  Output parameters: NONE
+++ */
+++void  _Message_queue_Core_message_queue_mp_support (
+++  Thread_Control *the_thread,
+++  epos_id        id
+++);
+++#endif
+++
+  #ifndef __RTEMS_APPLICATION__
+  #ifndef _OCC_NO_INLINE_
+  #include <rtems/rtems/message.inl>
+@@@ -303,6 -303,6 +319,9 @@@ RTEMS_INLINE_ROUTINE Message_queue_Cont
+  
+  #endif
+  #endif
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/rtems/msgmp.h>
+++#endif
+  
+  #ifdef __cplusplus
+  }
+diff --cc include/rtems/rtems/part.h
+index d71cfb3,d71cfb3..cb8eae5
+--- a/include/rtems/rtems/part.h
++++ b/include/rtems/rtems/part.h
+@@@ -209,6 -209,6 +209,9 @@@ RTEMS_INLINE_ROUTINE bool _Partition_Is
+  
+  #endif
+  #endif
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/rtems/partmp.h>
+++#endif
+  
+  #ifdef __cplusplus
+  }
+diff --cc include/rtems/rtems/region.h
+index e172d16,e172d16..c23a564
+--- a/include/rtems/rtems/region.h
++++ b/include/rtems/rtems/region.h
+@@@ -290,6 -290,6 +290,10 @@@ extern void _Region_Process_queue(Regio
+  
+  #endif
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/rtems/regionmp.h>
+++#endif
+++
+  /**
+   *  @brief _Region_Debug_Walk
+   *
+diff --cc include/rtems/rtems/sem.h
+index 0ebcc7f,0ebcc7f..71b9cea
+--- a/include/rtems/rtems/sem.h
++++ b/include/rtems/rtems/sem.h
+@@@ -258,6 -258,6 +258,9 @@@ RTEMS_INLINE_ROUTINE bool _Semaphore_Is
+  #endif
+  
+  #endif
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/rtems/semmp.h>
+++#endif
+  
+  #ifdef __cplusplus
+  }
+diff --cc include/rtems/rtems/signal.h
+index 1329f50,1329f50..b74e3fa
+--- a/include/rtems/rtems/signal.h
++++ b/include/rtems/rtems/signal.h
+@@@ -77,6 -77,6 +77,10 @@@ epos_status_code epos_signal_send
+    epos_signal_set signal_set
+  );
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/rtems/signalmp.h>
+++#endif
+++
+  #ifdef __cplusplus
+  }
+  #endif
+diff --cc include/rtems/rtems/tasks.h
+index c40627b,c40627b..8dac58d
+--- a/include/rtems/rtems/tasks.h
++++ b/include/rtems/rtems/tasks.h
+@@@ -511,7 -511,7 +511,9 @@@ RTEMS_INLINE_ROUTINE bool _RTEMS_tasks_
+  
+  #endif
+  #endif
+--
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/rtems/taskmp.h>
+++#endif
+  
+  #ifdef __cplusplus
+  }
+diff --cc include/rtems/rtems/types.h
+index a908350,a908350..1d9e3c5
+--- a/include/rtems/rtems/types.h
++++ b/include/rtems/rtems/types.h
+@@@ -30,6 -30,6 +30,10 @@@
+  #include <rtems/score/tod.h>
+  #include <rtems/score/watchdog.h>
+  #include <rtems/rtems/modes.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#include <rtems/score/mppkt.h>
+++#endif
+  
+  #ifdef __cplusplus
+  extern "C" {
+@@@ -168,6 -168,6 +172,60 @@@ typedef struct 
+   */
+  typedef Modes_Control epos_mode;
+  
+++/*
+++ *  MPCI related entries
+++ */
+++#if defined(RTEMS_MULTIPROCESSING)
+++/**
+++ * @brief Set of MPCI packet classes which are internally dispatched to the
+++ * managers.
+++ */
+++typedef MP_packet_Classes          epos_mp_packet_classes;
+++
+++/**
+++ * @brief Prefix found at the beginning of each MPCI packet sent between nodes.
+++ */
+++typedef MP_packet_Prefix           epos_packet_prefix;
+++
+++/**
+++ * @brief Indirect pointer to the initialization entry point for an MPCI
+++ * handler.
+++ */
+++typedef MPCI_initialization_entry  epos_mpci_initialization_entry;
+++
+++/**
+++ * @brief Indirect pointer to the get_packet entry point for an MPCI handler.
+++ */
+++typedef MPCI_get_packet_entry      epos_mpci_get_packet_entry;
+++
+++/**
+++ * @brief Indirect pointer to the return_packet entry point for an MPCI
+++ * handler.
+++ */
+++typedef MPCI_return_packet_entry   epos_mpci_return_packet_entry;
+++
+++/**
+++ * @brief Indirect pointer to the send_packet entry point for an MPCI handler.
+++ */
+++typedef MPCI_send_entry            epos_mpci_send_packet_entry;
+++
+++/**
+++ * @brief Indirect pointer to the receive entry point for an MPCI handler.
+++ */
+++typedef MPCI_receive_entry         epos_mpci_receive_packet_entry;
+++
+++/**
+++ * @brief Return type from every MPCI handler routine.
+++ */
+++typedef MPCI_Entry                 epos_mpci_entry;
+++
+++/**
+++ * @brief Structure which is used to configure an MPCI handler.
+++ */
+++typedef MPCI_Control               epos_mpci_table;
+++
+++#endif
+++
+  /** @} */
+  
+  #ifdef __cplusplus
+diff --cc include/rtems/score/cpu.h
+index e1aa8b3,e1aa8b3..d01bbb1
+--- a/include/rtems/score/cpu.h
++++ b/include/rtems/score/cpu.h
+@@@ -114,30 -114,30 +114,21 @@@ typedef void CPU_Interrupt_frame
+   */
+  typedef uint32_t REG_TYPE;
+  
+--//Context_Control的大小
+--//#define N_REGS 0x51D
+--#define N_REGS 0x2B6
+--#define N_B_REGS 0x268
+++#define N_REGS 0x51D
+  
+  typedef struct _Context_Control
+  {
+  	REG_TYPE current_stack_base;
+--	REG_TYPE context_B_base;//指向B栈的基址
+  	REG_TYPE _ira[44];
+  	REG_TYPE _ra;
+  	REG_TYPE _ba;
+  	REG_TYPE _u9;
+  	REG_TYPE _sr;
+--	REG_TYPE _pad1[0x278]; //去掉保存在B栈中的个数
+++	REG_TYPE _pad1[0x4E0];
+  	REG_TYPE return_address;
+  	REG_TYPE _pad2[0xB];
+  }Context_Control;
+  
+--typedef struct _Context_B
+--{
+--	REG_TYPE _pad1[0x268];
+--}Context_B;
+--
+  
+  
+  // removed by 098
+diff --cc include/rtems/score/cpuopts.h
+index b0ff265,b0ff265..23d118b
+--- a/include/rtems/score/cpuopts.h
++++ b/include/rtems/score/cpuopts.h
+@@@ -14,6 -14,6 +14,11 @@@
+  /* if RTEMS_DEBUG is enabled */
+  /* #undef RTEMS_DEBUG */
+  
+++
+++
+++/* if multiprocessing is enabled */
+++/* #undef RTEMS_MULTIPROCESSING */
+++
+  /* if using newlib */
+  #define RTEMS_NEWLIB 1
+  //#undef RTEMS_NEWLIB
+@@@ -48,6 -48,6 +53,8 @@@
+  /* disable strict order mutex */
+  /* #undef __RTEMS_STRICT_ORDER_MUTEX__ */
+  
+++/* Define to 1 if ada/gnat bindings are built-in */
+++/* #undef __RTEMS_ADA__ */
+  
+  /* major version portion of an RTEMS release */
+  #define __RTEMS_MAJOR__ 4
+diff --cc include/rtems/score/object.h
+index 18189b0,18189b0..433cb3c
+--- a/include/rtems/score/object.h
++++ b/include/rtems/score/object.h
+@@@ -232,10 -232,10 +232,12 @@@ typedef enum 
+    OBJECTS_INTERNAL_API = 1,
+    OBJECTS_CLASSIC_API  = 2,
+    OBJECTS_POSIX_API    = 3
+++ // OBJECTS_ITRON_API    = 4
+  } Objects_APIs;
+  
+  
+  /** This macro is used to generically specify the last API index. */
+++//#define OBJECTS_APIS_LAST OBJECTS_ITRON_API
+  #define OBJECTS_APIS_LAST OBJECTS_POSIX_API
+  
+  /**
+@@@ -305,6 -305,6 +307,9 @@@ typedef enum 
+   *  an object with the specified ID.
+   */
+  typedef enum {
+++#if defined(RTEMS_MULTIPROCESSING)
+++  OBJECTS_REMOTE = 2,         /* object is remote */
+++#endif
+    OBJECTS_LOCAL  = 0,         /* object is local */
+    OBJECTS_ERROR  = 1          /* id was invalid */
+  } Objects_Locations;
+@@@ -369,19 -369,19 +374,29 @@@ typedef struct 
+    uint16_t          name_length;
+    /** This is this object class' method called when extracting a thread. */
+    Objects_Thread_queue_Extract_callout extract;
+++  #if defined(RTEMS_MULTIPROCESSING)
+++    /** This is this object class' pointer to the global name table */
+++    Chain_Control    *global_table;
+++  #endif
+  }   Objects_Information;
+  
+  /**
+   *  The following is referenced to the node number of the local node.
+   */
+++#if defined(RTEMS_MULTIPROCESSING)
+++SCORE_EXTERN uint16_t       _Objects_Local_node;
+++#else
+  #define _Objects_Local_node ((uint16_t)1)
+--
+++#endif
+  
+  /**
+   *  The following is referenced to the number of nodes in the system.
+   */
+++#if defined(RTEMS_MULTIPROCESSING)
+++SCORE_EXTERN uint16_t    _Objects_Maximum_nodes;
+++#else
+  #define _Objects_Maximum_nodes 1
+--
+++#endif
+  
+  /**
+   *  The following is the list of information blocks per API for each object
+@@@ -483,6 -483,6 +498,11 @@@ void _Objects_Initialize_information 
+    uint16_t             size,
+    bool                 is_string,
+    uint32_t             maximum_name_length
+++#if defined(RTEMS_MULTIPROCESSING)
+++  ,
+++  bool                 supports_global,
+++  Objects_Thread_queue_Extract_callout extract
+++#endif
+  );
+  
+  /**
+@@@ -951,6 -951,6 +971,9 @@@ RTEMS_INLINE_ROUTINE void _Objects_Open
+    const char          *name
+  );
+  #endif
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/objectmp.h>
+++#endif
+  
+  #ifdef __cplusplus
+  }
+diff --cc include/rtems/score/sysstate.h
+index 0cdf2c9,0cdf2c9..4526e93
+--- a/include/rtems/score/sysstate.h
++++ b/include/rtems/score/sysstate.h
+@@@ -76,6 -76,6 +76,9 @@@ typedef enum 
+  
+  #define SYSTEM_STATE_CODES_LAST SYSTEM_STATE_FAILED
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++SCORE_EXTERN bool _System_state_Is_multiprocessing;
+++#endif
+  
+  SCORE_EXTERN System_state_Codes _System_state_Current;
+  
+@@@ -92,7 -92,7 +95,11 @@@ RTEMS_INLINE_ROUTINE void _System_state
+  );
+  
+  RTEMS_INLINE_ROUTINE void _System_state_Handler_initialization (
+-- bool  is_multiprocessing __attribute__((unused))
+++#if defined(RTEMS_MULTIPROCESSING)
+++  bool  is_multiprocessing
+++#else
+++ // bool  is_multiprocessing __attribute__((unused))
+++#endif
+  );
+  
+  RTEMS_INLINE_ROUTINE System_state_Codes _System_state_Get ( void );
+diff --cc include/rtems/score/sysstate.inl
+index afd678c,afd678c..51c772f
+--- a/include/rtems/score/sysstate.inl
++++ b/include/rtems/score/sysstate.inl
+@@@ -43,10 -43,10 +43,17 @@@ RTEMS_INLINE_ROUTINE void _System_state
+  }
+   
+  RTEMS_INLINE_ROUTINE void _System_state_Handler_initialization (
+--  bool  is_multiprocessing __attribute__((unused))
+++#if defined(RTEMS_MULTIPROCESSING)
+++  bool  is_multiprocessing
+++#else
+++ // bool  is_multiprocessing __attribute__((unused))
+++#endif
+  )
+  {
+    _System_state_Set( SYSTEM_STATE_BEFORE_INITIALIZATION );
+++#if defined(RTEMS_MULTIPROCESSING)
+++    _System_state_Is_multiprocessing = is_multiprocessing;
+++#endif
+  }
+  
+  RTEMS_INLINE_ROUTINE System_state_Codes _System_state_Get ( void )
+diff --cc include/rtems/score/thread.h
+index 96796fe,96796fe..550bcb1
+--- a/include/rtems/score/thread.h
++++ b/include/rtems/score/thread.h
+@@@ -68,6 -68,6 +68,9 @@@ extern "C" 
+  
+  #include <rtems/score/context.h>
+  #include <rtems/score/cpu.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mppkt.h>
+++#endif
+  #include <rtems/score/object.h>
+  #include <rtems/score/priority.h>
+  #include <rtems/score/stack.h>
+@@@ -308,6 -308,6 +311,10 @@@ typedef struct 
+    Thread_Wait_information  Wait;
+    /** This field is the Watchdog used to manage proxy delays and timeouts. */
+    Watchdog_Control         Timer;
+++#if defined(RTEMS_MULTIPROCESSING)
+++  /** This field is the received response packet in an MP system. */
+++  MP_packet_Prefix        *receive_packet;
+++#endif
+       /****************** end of common block ********************/
+    /** This field is used to manage the set of proxies in the system. */
+    Chain_Node               Active;
+@@@ -351,6 -351,6 +358,10 @@@ struct Thread_Control_struct 
+    Thread_Wait_information  Wait;
+    /** This field is the Watchdog used to manage thread delays and timeouts. */
+    Watchdog_Control         Timer;
+++#if defined(RTEMS_MULTIPROCESSING)
+++  /** This field is the received response packet in an MP system. */
+++  MP_packet_Prefix        *receive_packet;
+++#endif
+  #ifdef __RTEMS_STRICT_ORDER_MUTEX__
+    /** This field is the head of queue of priority inheritance mutex
+     *  held by the thread.
+@@@ -360,13 -360,13 +371,20 @@@
+       /*================= end of common block =================*/
+    /** This field is the number of nested suspend calls. */
+    uint32_t                              suspend_count;
+++#if defined(RTEMS_MULTIPROCESSING)
+++  /** This field is true if the thread is offered globally */
+++  bool                                  is_global;
+++#endif
+    /** This field is is true if the post task context switch should be
+     *  executed for this thread at the next context switch.
+     */
+    bool                                  do_post_task_switch_extension;
+    /** This field is true if the thread is preemptible. */
+    bool                                  is_preemptible;
+--
+++#if __RTEMS_ADA__
+++  /** This field is the GNAT self context pointer. */
+++  void                                 *epos_ada_self;
+++#endif
+    /** This field is the length of the time quantum that this thread is
+     *  allowed to consume.  The algorithm used to manage limits on CPU usage
+     *  is specified by budget_algorithm.
+@@@ -409,6 -409,6 +427,10 @@@
+    epos_task_variable_t                *task_variables;
+  };
+  
+++/**
+++ *  Self for the GNU Ada Run-Time
+++ */
+++SCORE_EXTERN void *epos_ada_self;
+  
+  /**
+   *  The following defines the information control block used to
+@@@ -888,6 -888,6 +910,9 @@@ RTEMS_INLINE_ROUTINE void _Thread_Set_l
+  #endif
+  
+  #endif
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/threadmp.h>
+++#endif
+  
+  #ifdef __cplusplus
+  }
+diff --cc include/rtems/score/wkspace.h
+index cbb4eb6,cbb4eb6..48344a6
+--- a/include/rtems/score/wkspace.h
++++ b/include/rtems/score/wkspace.h
+@@@ -49,7 -49,7 +49,7 @@@ extern "C" 
+   *  RTEMS Executive Workspace.
+   */
+  SCORE_EXTERN Heap_Control _Workspace_Area;  /* executive heap header */
+--SCORE_EXTERN Heap_Control _Workspace_Area_B;
+++
+  /** @brief Workspace Handler Initialization
+   *
+   *  This routine performs the initialization necessary for this handler.
+diff --cc include/rtems/sptables.h
+index a1c3c98,a1c3c98..cbd5da4
+--- a/include/rtems/sptables.h
++++ b/include/rtems/sptables.h
+@@@ -38,6 -38,6 +38,9 @@@ extern "C" 
+  #include <rtems/rtems/tasks.h>
+  #include <rtems/rtems/event.h>
+  #include <rtems/rtems/message.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/rtems/mp.h>
+++#endif
+  #include <rtems/rtems/part.h>
+  #include <rtems/rtems/ratemon.h>
+  #include <rtems/rtems/region.h>
+@@@ -45,6 -45,6 +48,26 @@@
+  #include <rtems/rtems/signal.h>
+  #include <rtems/rtems/timer.h>
+  
+++#if defined(RTEMS_MULTIPROCESSING)
+++/*
+++ *  This is the default Multiprocessing Configuration Table.
+++ *  It is used in single processor configurations.
+++ */
+++  #if defined(SAPI_INIT)
+++    const epos_multiprocessing_table
+++	   _Initialization_Default_multiprocessing_table = {
+++      1,                        /* local node number */
+++      1,                        /* maximum number nodes in system */
+++      0,                        /* maximum number global objects */
+++      0,                        /* maximum number proxies */
+++      STACK_MINIMUM_SIZE,       /* MPCI receive server stack size */
+++      NULL,                     /* pointer to MPCI address table */
+++    };
+++  #else
+++    extern const epos_multiprocessing_table
+++	   _Initialization_Default_multiprocessing_table;
+++  #endif
+++#endif
+  
+  #ifdef __cplusplus
+  }
+diff --cc libbsp/bwdsp/cpu.c
+index 8d4b5ca,8d4b5ca..b0e0cfc
+--- a/libbsp/bwdsp/cpu.c
++++ b/libbsp/bwdsp/cpu.c
+@@@ -98,21 -98,21 +98,12 @@@ void _CPU_Context_Initialize
+  	sp -= (N_REGS);
+  
+  	memset( sp+1, 0x0,  N_REGS );
+--/*	无B_Context的情况
+++	
+  	*(sp+46) = (uint32_t)entry_point;	//ser
+  	*(sp+45) = (uint32_t)entry_point;     //swir_r
+  	*(sp+48) = (uint32_t)bp;			//u9
+--*/
+--	*(sp+47) = (uint32_t)entry_point;	//ser
+--	*(sp+46) = (uint32_t)entry_point;     //swir_r
+--	*(sp+49) = (uint32_t)bp;			//u9
+  	*(sp+1)  = (uint32_t)bp;			//cur_stack_base
+  	*(sp + (N_REGS-11) )= (uint32_t)entry_point;  //return_address
+--
+--	//对Context_B的管理:分配B的空间，并把基址存入Context_control对应成员中
+--	void *context_B_start_address;
+--  	context_B_start_address = _Heap_Allocate( &_Workspace_Area_B, N_B_REGS );
+--	*(sp+2)  = (uint32_t)(context_B_start_address+N_B_REGS-1);
+  	
+  	*the_context= (Context_Control*)(sp+1);
+  }
+diff --cc libbsp/shared/bootcard.c
+index b2fbfb9,b2fbfb9..26f812a
+--- a/libbsp/shared/bootcard.c
++++ b/libbsp/shared/bootcard.c
+@@@ -155,10 -155,10 +155,8 @@@ int bootcard
+  //    Configuration.work_space_size  = work_area_size;
+  //  } else {
+      Configuration.work_space_start = (void*)0x800000;
+--    Configuration.work_space_B_start = (void*)0xC00000;
+  //  }
+      Configuration.work_space_size=0x36000;
+--    Configuration.work_space_B_size=0x36000;
+  
+    #if (BSP_DIRTY_MEMORY == 1)
+  	printk("bsp_dirty_memory==1\n");
+diff --cc libmisc/error.c
+index 294a517,294a517..d0327e9
+--- a/libmisc/error.c
++++ b/libmisc/error.c
+@@@ -128,7 -128,7 +128,10 @@@ static int epos_verror
+      if (error_flag & RTEMS_ERROR_ERRNO)     /* include errno? */
+          local_errno = errno;
+  
+--
+++    #if defined(RTEMS_MULTIPROCESSING)
+++      if (_System_state_Is_multiprocessing)
+++        fprintf(stderr, "[%" PRIu32 "] ", _Configuration_MP_table->node);
+++    #endif
+   
+      chars_written += vfprintf(stderr, printf_format, arglist);
+  
+diff --cc libmisc/sysstate_inl.c
+index afd678c,afd678c..51c772f
+--- a/libmisc/sysstate_inl.c
++++ b/libmisc/sysstate_inl.c
+@@@ -43,10 -43,10 +43,17 @@@ RTEMS_INLINE_ROUTINE void _System_state
+  }
+   
+  RTEMS_INLINE_ROUTINE void _System_state_Handler_initialization (
+--  bool  is_multiprocessing __attribute__((unused))
+++#if defined(RTEMS_MULTIPROCESSING)
+++  bool  is_multiprocessing
+++#else
+++ // bool  is_multiprocessing __attribute__((unused))
+++#endif
+  )
+  {
+    _System_state_Set( SYSTEM_STATE_BEFORE_INITIALIZATION );
+++#if defined(RTEMS_MULTIPROCESSING)
+++    _System_state_Is_multiprocessing = is_multiprocessing;
+++#endif
+  }
+  
+  RTEMS_INLINE_ROUTINE System_state_Codes _System_state_Get ( void )
+diff --cc optman/rtems/no-mp.c
+index 8b6a6a7,8b6a6a7..96ad509
+--- a/optman/rtems/no-mp.c
++++ b/optman/rtems/no-mp.c
+@@@ -13,3 -13,3 +13,24 @@@
+   */
+  
+  #include "rtems/system.h"
+++#if !defined(RTEMS_MULTIPROCESSING)
+++/* char epos_no_multiprocessing; */
+++#else
+++#include "rtems/rtems/status.h"
+++#include "rtems/rtems/mp.h"
+++#include "rtems/score/cpu.h"
+++#include "rtems/score/interr.h"
+++#include "rtems/score/mpci.h"
+++#include "rtems/score/mppkt.h"
+++#include "rtems/score/states.h"
+++#include "rtems/score/thread.h"
+++#include "rtems/score/threadq.h"
+++#include "rtems/score/tqdata.h"
+++#include "rtems/score/watchdog.h"
+++#include "rtems/score/sysstate.h"
+++#include "rtems/score/interr.h"
+++
+++void _Multiprocessing_Manager_initialization(void)
+++{
+++}
+++#endif
+diff --cc sapi/exinit.c
+index 1e7efc8,1e7efc8..0d71809
+--- a/sapi/exinit.c
++++ b/sapi/exinit.c
+@@@ -43,6 -43,6 +43,9 @@@
+  #include <rtems/score/interr.h>
+  #include <rtems/score/isr.h>
+  #include <rtems/score/interrupts.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/score/mpci.h>
+++#endif
+  #include <rtems/score/priority.h>
+  #include <rtems/score/thread.h>
+  #include <rtems/score/tod.h>
+@@@ -67,15 -67,15 +70,33 @@@ void epos_initialize_data_structures(vo
+     *           are disabled by boot_card().
+     */
+  
+--
+++  #if defined(RTEMS_MULTIPROCESSING)
+++    /*
+++     *  Initialize the system state based on whether this is an MP system.
+++     *  In an MP configuration, internally we view single processor
+++     *  systems as a very restricted multiprocessor system.
+++     */
+++    _Configuration_MP_table = Configuration.User_multiprocessing_table;
+++
+++    if ( _Configuration_MP_table == NULL ) {
+++      _Configuration_MP_table =
+++	(void *)&_Initialization_Default_multiprocessing_table;
+++      _System_state_Handler_initialization( FALSE );
+++    } else {
+++      _System_state_Handler_initialization( TRUE );
+++    }
+++  #else
+      _System_state_Handler_initialization( FALSE );
+--
+++  #endif
+  
+    /*
+     * Initialize any target architecture specific support as early as possible
+     */
+  //  _CPU_Initialize();
+  
+++  #if defined(RTEMS_MULTIPROCESSING)
+++    _Objects_MP_Handler_early_initialization();
+++  #endif
+  
+    /*
+     *  Do this as early as possible to ensure no debugging output
+@@@ -111,6 -111,6 +132,11 @@@
+  
+    _Thread_Handler_initialization();
+  
+++  #if defined(RTEMS_MULTIPROCESSING)
+++    _Objects_MP_Handler_initialization();
+++    _MPCI_Handler_initialization( RTEMS_TIMEOUT );
+++  #endif
+++
+  /* MANAGERS */
+  
+    _RTEMS_API_Initialize();
+@@@ -143,6 -143,6 +169,11 @@@
+  
+  void epos_initialize_before_drivers(void)
+  {
+++
+++  #if defined(RTEMS_MULTIPROCESSING)
+++    _MPCI_Create_server();
+++  #endif
+++
+    #if defined(FUNCTIONALITY_NOT_CURRENTLY_USED_BY_ANY_API)
+      /*
+       *  Run the API and BSPs predriver hook.
+@@@ -161,6 -161,6 +192,15 @@@ void epos_initialize_device_drivers(voi
+  
+    _IO_Initialize_all_drivers();
+  
+++  #if defined(RTEMS_MULTIPROCESSING)
+++    if ( _System_state_Is_multiprocessing ) {
+++      _MPCI_Initialization();
+++      _MPCI_Internal_packets_Send_process_packet(
+++	MPCI_PACKETS_SYSTEM_VERIFY
+++      );
+++    }
+++  #endif
+++
+    /*
+     *  Run the APIs and BSPs postdriver hooks.
+     *
+diff --cc sapi/extension.c
+index 4db9834,4db9834..b3380f8
+--- a/sapi/extension.c
++++ b/sapi/extension.c
+@@@ -43,6 -43,6 +43,11 @@@ void _Extension_Manager_initialization
+      sizeof( Extension_Control ),/* size of this object's control block */
+      FALSE,						/* true if the name is a string */
+      RTEMS_MAXIMUM_NAME_LENGTH	/* maximum length of an object name */
+++#if defined(RTEMS_MULTIPROCESSING)
+++	  ,
+++	  true, 					   /* true if this is a global object class */
+++	  NULL						   /* Proxy extraction support callout */
+++#endif
+    );
+  }
+  
+@@@ -150,6 -150,6 +155,9 @@@ epos_status_code epos_extension_delete
+    the_extension = _Extension_Get( id, &location );
+    switch ( location ) {
+      case OBJECTS_ERROR:
+++#if defined(RTEMS_MULTIPROCESSING)		
+++    case OBJECTS_REMOTE:            /* should never return this */
+++#endif
+        return RTEMS_INVALID_ID;
+      case OBJECTS_LOCAL:
+        _User_extensions_Remove_set( &the_extension->Extension );
+diff --cc sapi/rtemsapi.c
+index 64c2a48,64c2a48..f2b660e
+--- a/sapi/rtemsapi.c
++++ b/sapi/rtemsapi.c
+@@@ -34,6 -34,6 +34,9 @@@
+  #include <rtems/rtems/tasks.h>
+  #include <rtems/rtems/event.h>
+  #include <rtems/rtems/message.h>
+++#if defined(RTEMS_MULTIPROCESSING)
+++#include <rtems/rtems/mp.h>
+++#endif
+  #include <rtems/rtems/part.h>
+  #include <rtems/rtems/ratemon.h>
+  #include <rtems/rtems/region.h>
+@@@ -58,6 -58,6 +61,10 @@@ void _RTEMS_API_Initialize(void
+     */
+    _Objects_Information_table[OBJECTS_CLASSIC_API] = _RTEMS_Objects;
+  
+++  #if defined(RTEMS_MULTIPROCESSING)
+++    _Multiprocessing_Manager_initialization();
+++  #endif
+++
+    _RTEMS_tasks_Manager_initialization();
+    _Timer_Manager_initialization();
+    _Signal_Manager_initialization();
