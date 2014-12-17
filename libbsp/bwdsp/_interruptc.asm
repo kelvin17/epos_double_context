@@ -11,7 +11,7 @@
 _interruptc_process:
   clr CGCR[0] // 关全局中断
   
-  	xr1  = 53
+  xr1  = 53
 	xr0 = v1
 	if xr0 == r1 b __itihr0_r_exit 
 
@@ -553,13 +553,12 @@ _exitme:
 
   u8 = u8+1 //让u8指向栈顶，而非下一位
   //恢复u10-u15
+  u8 = u8 + 8   //在保存的时候，这里空了8个空
   xyztr1:0 = [u8 += 8, 1]
   u10 = xr0 || u11 = xr1 || u12 = yr0 || u13 = yr1 || u14 = zr0 || u15 = zr1
+  IMAFR = tr0   //恢复IMAFR
 
-  //恢复IMAFR
-  IMAFR = tr0
   //双栈改造开始
-
   xr1 = _context_B_base  //取得_context_B_base中的值，它是一个地址
   w0 = xr1
   xr0 = [w0+0,0]    //访问_context_B_base这个地址中存储的值，它是context B的基址
@@ -727,13 +726,11 @@ _exitme:
 
   v0 = xr0 || v1 = xr1 || v2 = yr0 || v3 = yr1 || v4 = zr0 || v5 = zr1 || v6 = tr0 || v7 = tr1
 
-  xyztr1:0 = [u8 += 7,1]
-  xyztr1:0 = [u8 += 7,1]
-  u8 = u8+1
-  
+  xyztr1:0 = [u8 += 8,1]
+
   //restore -- correspond to start_interrupt.asm:_comm_isr
  /**不论从哪个中断恢复，都可以得到正确的返回地址**/ 
-  xr0 = [u8+1,0] || u8 = u8 + 1
+  xr0 = [u8 += 1,0] //u8指向了要取得位置，而不是下一位
   SWIR_R = xr0
   JIHR_R = xr0
   HIHR_R = xr0
@@ -778,6 +775,8 @@ _exitme:
   TILR3_R = xr0
   HILR_R = xr0
   JILR_R = xr0
+  //此时u8指向return address的高一位地址
+  u8 = u8 - 1
  /************************************/ 
   xr0 = [u8+1,0] || u8 = u8 + 1
   ba = xr0
@@ -787,7 +786,6 @@ _exitme:
   v1 = xr1
   xyztr1:0 = [u8+1,1] || u8 = u8 + 8
 
-//guohl///直接返回就好了
   set CGCR[0] // 开全局中断
   reti
 ////////

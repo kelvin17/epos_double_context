@@ -116,7 +116,7 @@ typedef uint32_t REG_TYPE;
 
 //Context_Control的大小
 //#define N_REGS 0x51D
-#define N_REGS 0x2B6
+#define N_REGS 0x2BE
 #define N_B_REGS 0x268
 
 typedef struct _Context_Control
@@ -128,7 +128,7 @@ typedef struct _Context_Control
 	REG_TYPE _ba;
 	REG_TYPE _u9;
 	REG_TYPE _sr;
-	REG_TYPE _pad1[0x278]; //去掉保存在B栈中的个数
+	REG_TYPE _pad1[0x280]; //去掉保存在B栈中的个数
 	REG_TYPE return_address;
 	REG_TYPE _pad2[0xB];
 }Context_Control;
